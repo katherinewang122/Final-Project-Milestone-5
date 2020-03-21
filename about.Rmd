@@ -5,7 +5,7 @@ output: html_document
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, include = F)
 
 library(readr)
 library(tidyverse)
@@ -18,14 +18,28 @@ library(janitor)
 library(ggmap)
 library(maps)
 library(mapdata)
+library(viridis)
 ```
 
+
 ```{r cleanData}
+
+# I created these three lists -- datapoints, datapoints1, and us_states -- to
+# help me select the variables I need from the tables as well as organize my
+# tables later on so that the states' names will be retained.
+
 datapoints <- c("geo_name", "se_a12003a_001", "se_a12003a_002", "se_a12003a_003", "se_a12003b_001", "se_a12003b_002", "se_a12003b_003", "se_a14009_001", "se_a14009_002", "se_a14009_003", "se_a14009_004", "se_a14009_005", "se_a14009_006", "se_a14009_009", "se_a14009_010")
 
 datapoints1 <- c("se_a12003a_001", "se_a12003a_002", "se_a12003a_003", "se_a12003b_001", "se_a12003b_002", "se_a12003b_003", "se_a14009_001", "se_a14009_002", "se_a14009_003", "se_a14009_004", "se_a14009_005", "se_a14009_006", "se_a14009_009", "se_a14009_010")
 
 us_states <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "Puerto Rico")
+
+# I downloaded the ACS file, transformed all the columns into character values
+# so that it could be loaded into a table, and skipped the first line so that
+# the first row of the tables shows the variable names. I cleaned the names in
+# order to facilitate calling variables later on, and I selected certain
+# variables to display, which were collectively under the list called
+# datapoints.
 
 acs2017 <- read_csv("raw-data/R12497278_SL040.csv", 
                     col_types = cols(.default = col_character()), 
@@ -46,13 +60,17 @@ acs2017[] <- lapply(acs2017, function(x) as.numeric(as.character(x)))
 acs_a <- acs2017 %>% select(datapoints1) %>% mutate(geo_name = us_states)
 acs <- inner_join(acs_states, acs_a, by = "geo_name")
 
+# I also loaded the NCES data, skipped the first five lines so that the variable
+# names are in the first row, and selected the variables I needed. I omitted all
+# the NAs to make the data more readable.
+
 nces2017 <- read_xls("raw-data/tabn219.46.xls", skip = 5) %>% 
-  select(1, 9, 10, 11, 12, 15) %>% 
+  select("1", "9", "10", "11", "12") %>% 
   na.omit()
 ```
 
 
-```{r , include = T, echo = F}
+```{r states, include = T, echo = F}
 # I downloaded data for the states, which is already stored in R. 
 
 states <- map_data("state")
@@ -69,7 +87,16 @@ p <- ggplot(data = states, aes(x = long,
 ```
 
 
-```{r male_dropout}
+```{r male_dropout, include = T, echo = F}
+
+# My first task was to create a map displaying school dropout rates for the male
+# population. I filtered the ACS data, selecting the three variables I needed,
+# and created a new variable, perc_dropout, to help me measure the percent of
+# those who dropped out. I created another variable, type, to remind me that
+# this was for the male population, just in case I choose to combine the female
+# and male datasets later on. I renamed some variables into names that held
+# meaning for the user.
+
 male <- acs %>% 
   select(geo_name, 
          se_a12003a_001, 
@@ -79,26 +106,30 @@ male <- acs %>%
   mutate(total = se_a12003a_001, drop = se_a12003a_002) %>% 
   mutate(region = geo_name)
 
+# I then turned all the states in the geo_name column into lowercase letters so
+# that it would facilitate the left_join function that I would later use.
+
 male$region <- tolower(male$geo_name)
+
+# I creatd a new male dropout rate tibble that only selected the variables I
+# needed.
 
 male_new <- male %>% 
   select(region, total, drop, perc_dropout, type)
-
-combined_male <- left_join(states, male_new, by = "region")
-
-ggplot(combined_male, aes(x = long, y = lat, group = group, fill = perc_dropout)) +
-  geom_polygon(color = "white") +
-  coord_fixed(1.3) +
-  labs(title = "School Dropout Rate for Male Population 16-19 Years By State", 
-       subtitle = "In 2017",
-       caption = "Source: American Community Survey 2017",
-       fill = "Dropout Rate") +
-  scale_fill_continuous(breaks = c(3, 4, 5, 6, 7), labels = c("3%", "4%", "5%", "6%", "7%"), trans = "reverse") +
-  theme_void()
 ```
 
 
-```{r female_dropout}
+```{r female_dropout, include = T, echo = F}
+
+# I copied what I did for the male dropout rate table, applying it to the female
+# dropout rate. My first task was to create a map displaying school dropout
+# rates for the female population. I filtered the ACS data, selecting the three
+# variables I needed, and created a new variable, perc_dropout, to help me
+# measure the percent of those who dropped out. I created another variable,
+# type, to remind me that this was for the female population, just in case I
+# choose to combine the female and male datasets later on. I renamed some
+# variables into names that held meaning for the user.
+
 female <- acs %>% 
   select(geo_name, 
          se_a12003b_001, 
@@ -108,27 +139,145 @@ female <- acs %>%
   mutate(total = se_a12003b_001, drop = se_a12003b_002) %>% 
   mutate(region = geo_name)
 
+# I then turned all the states in the geo_name column into lowercase letters so
+# that it would facilitate the left_join function that I would later use.
+
 female$region <- tolower(female$geo_name)
+
+# I creatd a new female dropout rate tibble that only selected the variables I
+# needed.
 
 female_new <- female %>% 
   select(region, total, drop, perc_dropout, type)
+```
 
-combined_female <- left_join(states, female_new, by = "region")
 
-ggplot(combined_female, aes(x = long, y = lat, group = group, fill = perc_dropout)) +
+```{r facet_dropout, include = T, echo = F}
+
+# I first combined the female and male dropout rates tables into a new tibble
+# called "both." Then I joined "both" with the states data to get "combo."
+both <- rbind(female_new, male_new)
+combo <- left_join(states, both, by = "region")
+
+# I turned this combined tibble into a map plot with the x and y axis as
+# longitude and latitude. The graph's colors show the percentage of student who
+# dropped out of school by gender in the year 2017. I gave the graph a fixed
+# coordinate so that it would always be displayed from the same perspective. I
+# also added title and labels to facilitate the reading of the graph. I changed
+# the legend to display the percentages and reversed the color order so that the
+# lighter colors show a lower dropout rate and the darker colors show a higher
+# dropout rate, which is a little bit more intuitive for me. Then I used
+# facet_wrap to ensure that the female and male populations would be shown
+# side-by-side.
+
+ggplot(combo, aes(x = long, y = lat, group = group, fill = perc_dropout)) +
   geom_polygon(color = "white") +
   coord_fixed(1.3) +
-  labs(title = "School Dropout Rate for Female Population 16-19 Years By State", 
+  labs(title = "School Dropout Rates for Population 16-19 Years by Gender", 
        subtitle = "In 2017",
        caption = "Source: American Community Survey 2017",
        fill = "Dropout Rate") +
-  scale_fill_continuous(breaks = c(3, 4, 5, 6), labels = c("3%", "4%", "5%", "6%"), trans = "reverse") +
-  theme_void()
+  scale_fill_viridis(option = "magma", 
+                     direction = -1, 
+                     guide = guide_colorbar(direction = "horizontal",
+                                            barheight = unit(2, units = "mm"),
+                                            barwidth = unit(35, units = "mm"),
+                                            draw.ulim = FALSE,
+                                            title.position = "top",
+                                            title.hjust = 0.5,
+                                            label.hjust = 0.5), 
+                     breaks = c(3, 4, 5, 6, 7), 
+                     labels = c("3%", "4%", "5%", "6%", "7%")) +
+  facet_wrap(~ type) +
+  theme_void() +
+  theme(legend.position = "bottom")
+```
+
+
+```{r race_grad, include = T, echo = F}
+
+# I removed the first row since it shows the graduation rate for the entire
+# nation, not the states. I then created a new column, region, which transformed
+# all the states' names into lowercase letters, which will facilitate combining
+# it with the states data. Next, I made four individual tibbles for the four
+# different races. For each of these tibbles, I created a new variable, race,
+# which will help me facet them later on. I also renamed all of their
+# percentages into a common variable, pct, so that I can combine them.
+
+race_grad <- nces2017[-1,]
+race_grad$region <- tolower(race_grad$"1")
+combined_race <- left_join(states, race_grad, by = "region")
+
+white <- race_grad %>% 
+  mutate(race = "white", pct = race_grad$"9") %>% 
+  select(region, race, pct)
+
+black <- race_grad %>% 
+  mutate(race = "black", pct = race_grad$"10") %>% 
+  select(region, race, pct)
+
+hispanic <- race_grad %>% 
+  mutate(race = "hispanic", pct = race_grad$"11") %>% 
+  select(region, race, pct)
+
+asian <- race_grad %>% 
+  mutate(race = "asian", pct = race_grad$"12") %>% 
+  select(region, race, pct)
+
+# Since I only know how to use rbind on two tibbles at a time, I used a separate
+# rbind function each time I joined two new tibbles to each other. For the final
+# combination, I used a left join to link the states data with the combined race
+# data, using their common variable, region.
+
+combineda <- rbind(white, black)
+combinedb <- rbind(combineda, hispanic)
+combinedc <- rbind(combinedb, asian)
+combined_final <- left_join(states, combinedc, by = "region")
+
+# I turned this into a map plot, with the x and y axis showing the longitude and
+# latitude. I filled the graph by the percent of students who graduated. I also
+# fixed the coordinates so that we will have the same perspective each time we
+# run the graph. I added titles and labels (including labels to the legend) to
+# make the graph more readable. Finally, I used facet_wrap to organize the maps
+# by race so that you can compare the graduation rates for each race
+# side-by-side.
+
+ggplot(combined_final, aes(x = long, y = lat, group = group, fill = pct)) +
+  geom_polygon(color = "white") +
+    scale_fill_viridis(option = "magma", 
+                     direction = -1, 
+                     guide = guide_colorbar(direction = "horizontal",
+                                            barheight = unit(2, units = "mm"),
+                                            barwidth = unit(35, units = "mm"),
+                                            draw.ulim = FALSE,
+                                            title.position = "top",
+                                            title.hjust = 0.5,
+                                            label.hjust = 0.5), 
+                     breaks = c(70, 80, 90), 
+                     labels = c("70%", "80%", "90%")) +
+  theme_void() +
+  theme(legend.position = "bottom") +
+  coord_fixed(1.3) +
+  labs(title = "School Graduation Rate By Race", 
+       subtitle = "In 2017",
+       caption = "Source: NCES 2017",
+       fill = "Graduation Rate") +
+  facet_wrap(~ race)
 ```
 
 
 
+**Background**
 
 
+The goal of this project is to discover the extent to which a school’s inequality mirrors that of its community’s. Although some believe that schools act as the springboard of social equality and progress, others argue that schools merely reinforce the existing stratification found in their societies. In order to test the idea of whether schools serve as social mirrors, I will analyze two main forms of inequality, race and gender, in two separate spheres -- the school and the community. Ultimately, I hope to discover whether a correlative relationship exists between inequality in a community and inequality in schools.
 
+
+I gathered my data from three sources: the American Community Surveys (ACS) from the US Census Bureau, the National Center for Education Statistics (NCES), and the Status of Women in the States. From ACS’ data, I extracted information about each state's school dropout rates by gender and  average household income by race. The dropout rates correspond to a school's gender inequality, whereas the household income by race measures a community's racial inequality. From the data from the National Center for Education Statistics (NCES), I retrieved  the adjusted cohort graduation rate (ACGR) based on race, which measures a school's racial inequality. Finally, from the Status of Women in the States, I obtained data on the gender earnings ratio among the states, which measures a community's gender inequality.
+
+
+Currently, I have created a graphic displaying levels of gender and racial inequality in schools in terms of dropout rates. 
+
+
+Url to my repo: https://github.com/katherinewang122/Final-Project-Milestone-5
 
