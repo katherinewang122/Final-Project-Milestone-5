@@ -1,0 +1,134 @@
+---
+title: "About.Rmd"
+author: "Katherine Wang"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+library(tidycensus)
+library(readxl)
+library(janitor)
+
+library(ggmap)
+library(maps)
+library(mapdata)
+```
+
+```{r cleanData}
+datapoints <- c("geo_name", "se_a12003a_001", "se_a12003a_002", "se_a12003a_003", "se_a12003b_001", "se_a12003b_002", "se_a12003b_003", "se_a14009_001", "se_a14009_002", "se_a14009_003", "se_a14009_004", "se_a14009_005", "se_a14009_006", "se_a14009_009", "se_a14009_010")
+
+datapoints1 <- c("se_a12003a_001", "se_a12003a_002", "se_a12003a_003", "se_a12003b_001", "se_a12003b_002", "se_a12003b_003", "se_a14009_001", "se_a14009_002", "se_a14009_003", "se_a14009_004", "se_a14009_005", "se_a14009_006", "se_a14009_009", "se_a14009_010")
+
+us_states <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "Puerto Rico")
+
+acs2017 <- read_csv("raw-data/R12497278_SL040.csv", 
+                    col_types = cols(.default = col_character()), 
+                    skip = 1) %>% 
+  clean_names() %>% 
+  select(all_of(datapoints))
+
+# In order to convert the columns from characters into numeric values, I used
+# the as.numeric function on the entire tibble. However, this rendered the first
+# column, which showed the names of the states, into NAs. Thus, I first pulled
+# out the state names column, changed the rest of the tibble into numeric
+# values, created a new list of all the states names, and then joined that list
+# with the numeric tibble to get a table that has state names as characters and
+# all the numbers as numeric values.
+
+acs_states <- acs2017[1]
+acs2017[] <- lapply(acs2017, function(x) as.numeric(as.character(x)))
+acs_a <- acs2017 %>% select(datapoints1) %>% mutate(geo_name = us_states)
+acs <- inner_join(acs_states, acs_a, by = "geo_name")
+
+nces2017 <- read_xls("raw-data/tabn219.46.xls", skip = 5) %>% 
+  select(1, 9, 10, 11, 12, 15) %>% 
+  na.omit()
+```
+
+
+```{r , include = T, echo = F}
+# I downloaded data for the states, which is already stored in R. 
+
+states <- map_data("state")
+
+# I created a ggplot of the states just to see how the map would look like
+# before I added my own data to it.
+
+p <- ggplot(data = states, aes(x = long, 
+                   y = lat, group = group)) + 
+  geom_polygon(fill = "lightgray", 
+               color = "white") + 
+  coord_fixed(1.3) +
+  guides(fill = FALSE)
+```
+
+
+```{r male_dropout}
+male <- acs %>% 
+  select(geo_name, 
+         se_a12003a_001, 
+         se_a12003a_002) %>% 
+  mutate(perc_dropout = (se_a12003a_002/se_a12003a_001)*100) %>% 
+  mutate(type = "male") %>% 
+  mutate(total = se_a12003a_001, drop = se_a12003a_002) %>% 
+  mutate(region = geo_name)
+
+male$region <- tolower(male$geo_name)
+
+male_new <- male %>% 
+  select(region, total, drop, perc_dropout, type)
+
+combined_male <- left_join(states, male_new, by = "region")
+
+ggplot(combined_male, aes(x = long, y = lat, group = group, fill = perc_dropout)) +
+  geom_polygon(color = "white") +
+  coord_fixed(1.3) +
+  labs(title = "School Dropout Rate for Male Population 16-19 Years By State", 
+       subtitle = "In 2017",
+       caption = "Source: American Community Survey 2017",
+       fill = "Dropout Rate") +
+  scale_fill_continuous(breaks = c(3, 4, 5, 6, 7), labels = c("3%", "4%", "5%", "6%", "7%"), trans = "reverse") +
+  theme_void()
+```
+
+
+```{r female_dropout}
+female <- acs %>% 
+  select(geo_name, 
+         se_a12003b_001, 
+         se_a12003b_002) %>% 
+  mutate(perc_dropout = (se_a12003b_002/se_a12003b_001)*100) %>% 
+  mutate(type = "female") %>% 
+  mutate(total = se_a12003b_001, drop = se_a12003b_002) %>% 
+  mutate(region = geo_name)
+
+female$region <- tolower(female$geo_name)
+
+female_new <- female %>% 
+  select(region, total, drop, perc_dropout, type)
+
+combined_female <- left_join(states, female_new, by = "region")
+
+ggplot(combined_female, aes(x = long, y = lat, group = group, fill = perc_dropout)) +
+  geom_polygon(color = "white") +
+  coord_fixed(1.3) +
+  labs(title = "School Dropout Rate for Female Population 16-19 Years By State", 
+       subtitle = "In 2017",
+       caption = "Source: American Community Survey 2017",
+       fill = "Dropout Rate") +
+  scale_fill_continuous(breaks = c(3, 4, 5, 6), labels = c("3%", "4%", "5%", "6%"), trans = "reverse") +
+  theme_void()
+```
+
+
+
+
+
+
+
