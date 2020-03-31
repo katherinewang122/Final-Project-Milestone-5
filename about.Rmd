@@ -19,6 +19,12 @@ library(ggmap)
 library(maps)
 library(mapdata)
 library(viridis)
+
+library(gganimate)
+library(gifski)
+# library(transformr)
+# library(tweenr)
+# devtools::install_github('thomasp85/gganimate')
 ```
 
 
@@ -166,9 +172,10 @@ combo <- left_join(states, both, by = "region")
 # also added title and labels to facilitate the reading of the graph. I changed
 # the legend to display the percentages and reversed the color order so that the
 # lighter colors show a lower dropout rate and the darker colors show a higher
-# dropout rate, which is a little bit more intuitive for me. Then I used
-# facet_wrap to ensure that the female and male populations would be shown
-# side-by-side.
+# dropout rate, which is a little bit more intuitive for me. I used
+# guide_colorbar to change the layout of my legend key so that it would look
+# more aesthetic. Then I used facet_wrap to ensure that the female and male
+# populations would be shown side-by-side.
 
 ggplot(combo, aes(x = long, y = lat, group = group, fill = perc_dropout)) +
   geom_polygon(color = "white") +
@@ -238,11 +245,12 @@ combined_final <- left_join(states, combinedc, by = "region")
 # latitude. I filled the graph by the percent of students who graduated. I also
 # fixed the coordinates so that we will have the same perspective each time we
 # run the graph. I added titles and labels (including labels to the legend) to
-# make the graph more readable. Finally, I used facet_wrap to organize the maps
-# by race so that you can compare the graduation rates for each race
-# side-by-side.
+# make the graph more readable. I used guide_colorbar to change the layout of my
+# legend key so that it would look more aesthetic. Finally, I used facet_wrap to
+# organize the maps by race so that you can compare the graduation rates for
+# each race side-by-side.
 
-ggplot(combined_final, aes(x = long, y = lat, group = group, fill = pct)) +
+ggplot(combined_final, aes(x = long, y = lat, group = group, fill = pct, frame = race)) +
   geom_polygon(color = "white") +
     scale_fill_viridis(option = "magma", 
                      direction = -1, 
@@ -258,11 +266,11 @@ ggplot(combined_final, aes(x = long, y = lat, group = group, fill = pct)) +
   theme_void() +
   theme(legend.position = "bottom") +
   coord_fixed(1.3) +
-  labs(title = "School Graduation Rate By Race", 
-       subtitle = "In 2017",
+  labs(title = "School Graduation Rate by Race in 2017",
+       subtitle = "{current_frame}",
        caption = "Source: NCES 2017",
        fill = "Graduation Rate") +
-  facet_wrap(~ race)
+  transition_manual(race)
 ```
 
 
