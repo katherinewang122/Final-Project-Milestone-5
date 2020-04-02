@@ -93,10 +93,10 @@ p <- ggplot(data = states, aes(x = long,
 
 ```{r male_dropout, include = T, echo = F}
 
-# My first task was to create a map displaying school dropout rates for the male
-# population. I filtered the ACS data, selecting the three variables I needed,
-# and created a new variable, perc_dropout, to help me measure the percent of
-# those who dropped out. I created another variable, type, to remind me that
+# My first task was to create a map displaying school graduation rates for the
+# male population. I filtered the ACS data, selecting the three variables I
+# needed, and created a new variable, grad_rate, to help me measure the percent
+# of those who graduated. I created another variable, type, to remind me that
 # this was for the male population, just in case I choose to combine the female
 # and male datasets later on. I renamed some variables into names that held
 # meaning for the user.
@@ -105,7 +105,7 @@ male <- acs %>%
   select(geo_name, 
          se_a12003a_001, 
          se_a12003a_002) %>% 
-  mutate(perc_dropout = (se_a12003a_002/se_a12003a_001)*100) %>% 
+  mutate(grad_rate = 100 - (se_a12003a_002/se_a12003a_001)*100) %>% 
   mutate(type = "male") %>% 
   mutate(total = se_a12003a_001, drop = se_a12003a_002) %>% 
   mutate(region = geo_name)
@@ -115,21 +115,21 @@ male <- acs %>%
 
 male$region <- tolower(male$geo_name)
 
-# I creatd a new male dropout rate tibble that only selected the variables I
+# I creatd a new male graduation rate tibble that only selected the variables I
 # needed.
 
 male_new <- male %>% 
-  select(region, total, drop, perc_dropout, type)
+  select(region, total, drop, grad_rate, type)
 ```
 
 
 ```{r female_dropout, include = T, echo = F}
 
-# I copied what I did for the male dropout rate table, applying it to the female
-# dropout rate. My first task was to create a map displaying school dropout
-# rates for the female population. I filtered the ACS data, selecting the three
-# variables I needed, and created a new variable, perc_dropout, to help me
-# measure the percent of those who dropped out. I created another variable,
+# I copied what I did for the male graduation rate table, applying it to the
+# female graduation rate. My first task was to create a map displaying school
+# graduation rates for the female population. I filtered the ACS data, selecting
+# the three variables I needed, and created a new variable, grad_rate, to help
+# me measure the percent of those who graduated. I created another variable,
 # type, to remind me that this was for the female population, just in case I
 # choose to combine the female and male datasets later on. I renamed some
 # variables into names that held meaning for the user.
@@ -138,7 +138,7 @@ female <- acs %>%
   select(geo_name, 
          se_a12003b_001, 
          se_a12003b_002) %>% 
-  mutate(perc_dropout = (se_a12003b_002/se_a12003b_001)*100) %>% 
+  mutate(grad_rate = 100 - (se_a12003b_002/se_a12003b_001)*100) %>% 
   mutate(type = "female") %>% 
   mutate(total = se_a12003b_001, drop = se_a12003b_002) %>% 
   mutate(region = geo_name)
@@ -148,40 +148,40 @@ female <- acs %>%
 
 female$region <- tolower(female$geo_name)
 
-# I creatd a new female dropout rate tibble that only selected the variables I
-# needed.
+# I creatd a new female graduation rate tibble that only selected the variables
+# I needed.
 
 female_new <- female %>% 
-  select(region, total, drop, perc_dropout, type)
+  select(region, total, drop, grad_rate, type)
 ```
 
 
 ```{r facet_dropout, include = T, echo = F}
 
-# I first combined the female and male dropout rates tables into a new tibble
+# I first combined the female and male graduation rates tables into a new tibble
 # called "both." Then I joined "both" with the states data to get "combo."
 both <- rbind(female_new, male_new)
 combo <- left_join(states, both, by = "region")
 
 # I turned this combined tibble into a map plot with the x and y axis as
-# longitude and latitude. The graph's colors show the percentage of student who
-# dropped out of school by gender in the year 2017. I gave the graph a fixed
+# longitude and latitude. The graph's colors show the percentage of students who
+# graduated from school by gender in the year 2017. I gave the graph a fixed
 # coordinate so that it would always be displayed from the same perspective. I
 # also added title and labels to facilitate the reading of the graph. I changed
 # the legend to display the percentages and reversed the color order so that the
-# lighter colors show a lower dropout rate and the darker colors show a higher
-# dropout rate, which is a little bit more intuitive for me. I used
+# lighter colors show a lower graduation rate and the darker colors show a
+# higher graduation rate, which is a little bit more intuitive for me. I used
 # guide_colorbar to change the layout of my legend key so that it would look
 # more aesthetic. Then I used facet_wrap to ensure that the female and male
 # populations would be shown side-by-side.
 
-ggplot(combo, aes(x = long, y = lat, group = group, fill = perc_dropout)) +
+ggplot(combo, aes(x = long, y = lat, group = group, fill = grad_rate)) +
   geom_polygon(color = "white") +
   coord_fixed(1.3) +
-  labs(title = "School Dropout Rates for Population 16-19 Years by Gender", 
+  labs(title = "School Graduation Rates for Population 16-19 Years by Gender", 
        subtitle = "In 2017",
        caption = "Source: American Community Survey 2017",
-       fill = "Dropout Rate") +
+       fill = "Graduation Rate") +
   scale_fill_viridis(option = "magma", 
                      direction = -1, 
                      guide = guide_colorbar(direction = "horizontal",
@@ -190,12 +190,14 @@ ggplot(combo, aes(x = long, y = lat, group = group, fill = perc_dropout)) +
                                             draw.ulim = FALSE,
                                             title.position = "top",
                                             title.hjust = 0.5,
-                                            label.hjust = 0.5), 
-                     breaks = c(3, 4, 5, 6, 7), 
-                     labels = c("3%", "4%", "5%", "6%", "7%")) +
+                                            label.hjust = 0.5),
+                     breaks = c(93, 95, 97), 
+                     labels = c("93%", "95%", "97%")) +
   facet_wrap(~ type) +
   theme_void() +
   theme(legend.position = "bottom")
+
+ggsave(filename = "gradsex_plot.png", plot = last_plot(), path = "final_project")
 ```
 
 
