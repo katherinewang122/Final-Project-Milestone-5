@@ -271,6 +271,8 @@ ggplot(combined_final, aes(x = long, y = lat, group = group, fill = pct, frame =
        caption = "Source: NCES 2017",
        fill = "Graduation Rate") +
   transition_manual(race)
+
+anim_save(filename = "gradrace_plot.png", plot = last_animation(), path = "final_project")
 ```
 
 
