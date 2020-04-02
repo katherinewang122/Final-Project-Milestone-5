@@ -1,22 +1,14 @@
 library(shiny)
 library(shinythemes)
 
-# Define UI for application that draws a histogram
-ui <- navbarPage(
-    "Final Project Title",
-    tabPanel("Model",
-             fluidPage(
-                 theme = shinytheme("cosmo"),
-                 titlePanel("Final Project"),
-                 sidebarLayout(
-                     sidebarPanel(
-                         selectInput(
-                             "plot_type",
-                             "Plot Type",
-                             c("Option A" = "a", "Option B" = "b")
-                         )),
-                     mainPanel(plotOutput("image")))
-             )),
+# Define UI for application that shows graphs
+ui <- fluidPage(
+    theme = shinytheme("cosmo"),
+    navbarPage(tags$b("School Inequality in America"),
+    tabPanel("Findings",
+             plotOutput("gradrace"),
+             plotOutput("gradsex"))
+             ),
     tabPanel("Discussion",
              titlePanel("Discussion Title"),
              p("Tour of the modeling choices you made and 
@@ -54,9 +46,16 @@ ui <- navbarPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-    output$image <- renderImage({
+    output$gradrace <- renderImage({
         list(src = "gradrace_plot.png",
              alt = "gradrace_plot.png")
+    }, deleteFile = FALSE)
+    
+    output$gradsex <- renderImage({
+        list(src = "gradsex_plot.png",
+             alt = "gradsex_plot.png",
+             height = 700,
+             width = 700)
     }, deleteFile = FALSE)
 }
 

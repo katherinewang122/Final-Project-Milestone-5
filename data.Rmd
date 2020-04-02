@@ -182,7 +182,7 @@ ggplot(combo, aes(x = long, y = lat, group = group, fill = grad_rate)) +
        subtitle = "In 2017",
        caption = "Source: American Community Survey 2017",
        fill = "Graduation Rate") +
-  scale_fill_viridis(option = "magma", 
+  scale_fill_viridis(option = "viridis", 
                      direction = -1, 
                      guide = guide_colorbar(direction = "horizontal",
                                             barheight = unit(2, units = "mm"),
