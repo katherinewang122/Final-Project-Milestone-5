@@ -5,14 +5,21 @@ library(shinythemes)
 ui <- fluidPage(
     theme = shinytheme("cosmo"),
     navbarPage(tags$b("School Inequality in America"),
+    
     tabPanel("Findings",
+             titlePanel("Findings"),
              plotOutput("gradrace"),
-             plotOutput("gradsex"))
+             plotOutput("gradsex")
              ),
-    tabPanel("Discussion",
-             titlePanel("Discussion Title"),
-             p("Tour of the modeling choices you made and 
-              an explanation of why you made them")),
+    
+    tabPanel("In-Depth Analysis",
+             titlePanel("In-Depth Analysis"),
+             mainPanel(
+                 p("Tour of the modeling choices you made and 
+                 an explanation of why you made them")
+             )
+             ),
+    
     tabPanel("About", 
              titlePanel("About"),
              h3("Project Background and Motivations"),
@@ -43,12 +50,15 @@ ui <- fluidPage(
              h3("About Me"),
              p("My name is Katherine, and I plan to concentrate in social studies.
              You can reach me at katherinewang1@college.harvard.edu.")))
+    )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     output$gradrace <- renderImage({
         list(src = "gradrace_plot.png",
-             alt = "gradrace_plot.png")
+             alt = "gradrace_plot.png",
+             height = 400,
+             width = 550)
     }, deleteFile = FALSE)
     
     output$gradsex <- renderImage({

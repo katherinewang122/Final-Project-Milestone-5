@@ -5,7 +5,7 @@ output: html_document
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE, include = F)
+knitr::opts_chunk$set(echo = F, include = T)
 
 library(readr)
 library(tidyverse)
@@ -37,6 +37,8 @@ datapoints <- c("geo_name", "se_a12003a_001", "se_a12003a_002", "se_a12003a_003"
 datapoints1 <- c("se_a12003a_001", "se_a12003a_002", "se_a12003a_003", "se_a12003b_001", "se_a12003b_002", "se_a12003b_003", "se_a14009_001", "se_a14009_002", "se_a14009_003", "se_a14009_004", "se_a14009_005", "se_a14009_006", "se_a14009_009", "se_a14009_010")
 
 us_states <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "Puerto Rico")
+
+datapoints2 <- c("geo_name", "se_a13001a_001", "se_a13001a_002", "se_a13001b_001", "se_a13001b_002", "se_a13001d_001", "se_a13001d_002", "se_a13001h_001", "se_a13001h_002", "se_a13005_001", "se_a13005_003", "se_a13005_004")
 
 # I downloaded the ACS file, transformed all the columns into character values
 # so that it could be loaded into a table, and skipped the first line so that
@@ -71,10 +73,16 @@ acs <- inner_join(acs_states, acs_a, by = "geo_name")
 nces2017 <- read_xls("raw-data/tabn219.46.xls", skip = 5) %>% 
   select("1", "9", "10", "11", "12") %>% 
   na.omit()
+
+pov_status <- read_csv("raw-data/R12518258_SL040.csv") %>% 
+  clean_names() %>% 
+  select(all_of(datapoints2))
+
+pov_status$geo_name <- tolower(pov_status$geo_name)
 ```
 
 
-```{r states, include = T, echo = F}
+```{r states}
 # I downloaded data for the states, which is already stored in R. 
 
 states <- map_data("state")
@@ -91,7 +99,7 @@ p <- ggplot(data = states, aes(x = long,
 ```
 
 
-```{r male_dropout, include = T, echo = F}
+```{r male_dropout}
 
 # My first task was to create a map displaying school graduation rates for the
 # male population. I filtered the ACS data, selecting the three variables I
@@ -123,7 +131,7 @@ male_new <- male %>%
 ```
 
 
-```{r female_dropout, include = T, echo = F}
+```{r female_dropout}
 
 # I copied what I did for the male graduation rate table, applying it to the
 # female graduation rate. My first task was to create a map displaying school
@@ -156,7 +164,7 @@ female_new <- female %>%
 ```
 
 
-```{r facet_dropout, include = T, echo = F}
+```{r facet_grad}
 
 # I first combined the female and male graduation rates tables into a new tibble
 # called "both." Then I joined "both" with the states data to get "combo."
@@ -178,8 +186,8 @@ combo <- left_join(states, both, by = "region")
 ggplot(combo, aes(x = long, y = lat, group = group, fill = grad_rate)) +
   geom_polygon(color = "white") +
   coord_fixed(1.3) +
-  labs(title = "School Graduation Rates for Population 16-19 Years by Gender", 
-       subtitle = "In 2017",
+  labs(title = "School Graduation Rates by Gender in 2017",
+       subtitle = "For Population 16-19 Years",
        caption = "Source: American Community Survey 2017",
        fill = "Graduation Rate") +
   scale_fill_viridis(option = "viridis", 
@@ -195,13 +203,15 @@ ggplot(combo, aes(x = long, y = lat, group = group, fill = grad_rate)) +
                      labels = c("93%", "95%", "97%")) +
   facet_wrap(~ type) +
   theme_void() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom", 
+        plot.title = element_text(size = 10),
+        plot.subtitle = element_text(size = 8))
 
 ggsave(filename = "gradsex_plot.png", plot = last_plot(), path = "final_project")
 ```
 
 
-```{r race_grad, include = T, echo = F}
+```{r race_grad}
 
 # I removed the first row since it shows the graduation rate for the entire
 # nation, not the states. I then created a new column, region, which transformed
@@ -268,9 +278,87 @@ ggplot(combined_final, aes(x = long, y = lat, group = group, fill = pct, frame =
   coord_fixed(1.3) +
   labs(title = "School Graduation Rate by Race in 2017",
        subtitle = "{current_frame}",
-       caption = "Source: NCES 2017",
+       caption = "Source: National Center for Education Statistics 2017",
        fill = "Graduation Rate") +
   transition_manual(race)
 
 anim_save(filename = "gradrace_plot.png", plot = last_animation(), path = "final_project")
 ```
+
+
+```{r poverty_status_sex_female}
+pov_status_sex <- pov_status %>% 
+  mutate(male = (se_a13005_003/se_a13005_001) * 100) %>% 
+  mutate(female = (se_a13005_004/se_a13005_001) * 100)
+
+# started with females
+
+female1 <- female
+female1$geo_name = tolower(female1$geo_name)
+
+pov_status_female <- left_join(pov_status_sex, female1, by = "geo_name") %>% 
+  mutate(drop_rate = (se_a12003b_002/se_a12003b_001)*100) %>% 
+  select(geo_name, female, drop_rate)
+
+pov_status_female %>% 
+  ggplot(aes(x = female, y = drop_rate)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Females in 2017",
+       x = "Percentage of Females Whose Income is Below Poverty Level",
+       y = "School Dropout Rate for Females 16-19 Years",
+       caption = "Source: American Community Survey 2017") +
+  theme_classic()
+```
+
+
+```{r poverty_status_sex_male}
+
+# males
+male1 <- male
+male1$geo_name = tolower(male1$geo_name)
+
+pov_status_male <- left_join(pov_status_sex, male1, by = "geo_name") %>% 
+  mutate(drop_rate = (se_a12003a_002/se_a12003a_001)*100) %>% 
+  select(geo_name, male, drop_rate)
+
+pov_status_male %>% 
+  ggplot(aes(x = male, y = drop_rate)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Males in 2017",
+       x = "Percentage of Males Whose Income is Below Poverty Level",
+       y = "School Dropout Rate for Males 16-19 Years",
+       caption = "Source: American Community Survey 2017") +
+  theme_classic()
+```
+
+
+```{r poverty_status_race}
+pov_status_race <- pov_status %>% 
+  mutate(white = (se_a13001a_002/se_a13001a_001) * 100) %>% 
+  mutate(black = (se_a13001b_002/se_a13001b_001) * 100) %>% 
+  mutate(asian = (se_a13001d_002/se_a13001d_001) * 100) %>% 
+  mutate(hispanic = (se_a13001h_002/se_a13001h_001) * 100)
+
+combined_final1 <- combined_final %>% 
+  mutate(geo_name = region) %>% 
+  mutate(drop_rate = 100 - pct)
+
+pov_status_joined <- left_join(pov_status_race, combined_final1, by = "geo_name") %>% 
+  select(geo_name, white, black, asian, hispanic, drop_rate, race)
+
+pov_status_white <- pov_status_joined %>% 
+  filter(race == "White") %>% 
+  ggplot(aes(x = white, y = drop_rate)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Whites in 2017",
+       x = "Percentage of Whites Whose Income is Below Poverty Level",
+       y = "School Dropout Rate for Whites",
+       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
+  theme_classic()
+
+pov_status_white
+```
+
