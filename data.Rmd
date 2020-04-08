@@ -309,6 +309,8 @@ pov_status_female %>%
        y = "School Dropout Rate for Females 16-19 Years",
        caption = "Source: American Community Survey 2017") +
   theme_classic()
+
+ggsave(filename = "pov_status_sex_F_plot.png", plot = last_plot(), path = "final_project")
 ```
 
 
@@ -331,6 +333,8 @@ pov_status_male %>%
        y = "School Dropout Rate for Males 16-19 Years",
        caption = "Source: American Community Survey 2017") +
   theme_classic()
+
+ggsave(filename = "pov_status_sex_M_plot.png", plot = last_plot(), path = "final_project")
 ```
 
 
@@ -360,5 +364,48 @@ pov_status_white <- pov_status_joined %>%
   theme_classic()
 
 pov_status_white
+ggsave(filename = "pov_status_race_W_plot.png", plot = last_plot(), path = "final_project")
+
+pov_status_black <- pov_status_joined %>% 
+  filter(race == "Black") %>% 
+  ggplot(aes(x = black, y = drop_rate)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Blacks in 2017",
+       x = "Percentage of Blacks Whose Income is Below Poverty Level",
+       y = "School Dropout Rate for Blacks",
+       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
+  theme_classic()
+
+pov_status_black
+ggsave(filename = "pov_status_race_B_plot.png", plot = last_plot(), path = "final_project")
+
+pov_status_asian <- pov_status_joined %>% 
+  filter(race == "Asian") %>% 
+  ggplot(aes(x = asian, y = drop_rate)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Asians in 2017",
+       x = "Percentage of Asians Whose Income is Below Poverty Level",
+       y = "School Dropout Rate for Asians",
+       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
+  theme_classic()
+
+pov_status_asian
+ggsave(filename = "pov_status_race_A_plot.png", plot = last_plot(), path = "final_project")
+
+pov_status_hispanic <- pov_status_joined %>% 
+  filter(race == "Hispanic") %>% 
+  ggplot(aes(x = hispanic, y = drop_rate)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Hispanics in 2017",
+       x = "Percentage of Hispanics Whose Income is Below Poverty Level",
+       y = "School Dropout Rate for Hispanics",
+       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
+  theme_classic()
+
+pov_status_hispanic
+ggsave(filename = "pov_status_race_H_plot.png", plot = last_plot(), path = "final_project")
 ```
 
