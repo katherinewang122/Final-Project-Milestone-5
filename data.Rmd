@@ -371,26 +371,26 @@ pov_status_final2 <- pov_status_final
 pov_status_final3 <- pov_status_final
 
 povplot <- ggplot() +
-  geom_point(data = pov_status_final, aes(x = whitepov, y = whitedo), col = "red") +
-  geom_smooth(data = pov_status_final, aes(x = whitepov, y = whitedo), method = "lm", se = F, col = "red") +
-  geom_point(data = pov_status_final1, aes(x = blackpov, y = blackdo), col = "green") +
-  geom_smooth(data = pov_status_final1, aes(x = blackpov, y = blackdo), method = "lm", se = F, col = "green") +
-  geom_point(data = pov_status_final2, aes(x = asianpov, y = asiando), col = "blue") +
-  geom_smooth(data = pov_status_final2, aes(x = asianpov, y = asiando), method = "lm", se = F, col = "blue") +
-  geom_point(data = pov_status_final3, aes(x = hisppov, y = hispdo), col = "orange") +
-  geom_smooth(data = pov_status_final3, aes(x = hisppov, y = hispdo), method = "lm", se = F, col = "orange") +
+  geom_point(data = pov_status_final, aes(x = whitepov, y = whitedo), col = "darkolivegreen", alpha = 0.8) +
+  geom_smooth(data = pov_status_final, aes(x = whitepov, y = whitedo), method = "lm", se = F, col = "darkolivegreen", alpha = 0.8) +
+  geom_point(data = pov_status_final1, aes(x = blackpov, y = blackdo), col = "deeppink2", alpha = 0.8) +
+  geom_smooth(data = pov_status_final1, aes(x = blackpov, y = blackdo), method = "lm", se = F, col = "deeppink2", alpha = 0.8) +
+  geom_point(data = pov_status_final2, aes(x = asianpov, y = asiando), col = "goldenrod2", alpha = 0.8) +
+  geom_smooth(data = pov_status_final2, aes(x = asianpov, y = asiando), method = "lm", se = F, col = "goldenrod2", alpha = 0.8) +
+  geom_point(data = pov_status_final3, aes(x = hisppov, y = hispdo), col = "midnightblue", alpha = 0.8) +
+  geom_smooth(data = pov_status_final3, aes(x = hisppov, y = hispdo), method = "lm", se = F, col = "midnightblue", alpha = 0.8) +
   scale_x_continuous(breaks = seq(5, 45, 5), limits = c(5, 45)) +
   scale_y_continuous(breaks = seq(0, 35, 5), limits = c(0, 35)) +
   labs(title = "Relationship Between Poverty Status and School Dropout Rate \n Based on Race in 2017",
        x = "Percentage Whose Income is Below Poverty Level",
        y = "School Dropout Rate",
        caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
+  theme(legend.position = "right") +
   theme_classic()
 
-povplot
-plot.new()
+plot(povplot)
 legend("bottomleft", legend = c("White", "Black", "Asian", "Hispanic"),
-       col = c("red", "green", "blue", "orange"), lty = 1:2, cex = 0.8,
-       title = "Race", text.font = 4, bg = "lightblue")
+       col = c("red", "green", "blue", "orange"), lty = 1, cex = 0.8,
+       title = "Race", text.font = 1, box.lty = 0)
 ```
 
