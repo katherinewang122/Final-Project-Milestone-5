@@ -352,60 +352,45 @@ combined_final1 <- combined_final %>%
 pov_status_joined <- left_join(pov_status_race, combined_final1, by = "geo_name") %>% 
   select(geo_name, white, black, asian, hispanic, drop_rate, race)
 
-pov_status_white <- pov_status_joined %>% 
-  filter(race == "White") %>% 
-  ggplot(aes(x = white, y = drop_rate)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = F) +
-  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Whites in 2017",
-       x = "Percentage of Whites Whose Income is Below Poverty Level",
-       y = "School Dropout Rate for Whites",
+statenames <- unique(pov_status_joined$geo_name)
+
+pov_status_final <- vector()
+for(i in 1:length(statenames)){
+  sub <- unique(pov_status_joined[pov_status_joined$geo_name == statenames[i], ])
+  addition <- c(snames[i], unlist(sub[1, 2:5]), sub$drop_rate[c(1, 2, 4, 3)])
+  pov_status_final <- rbind(pov_status_final, addition)
+}
+pov_status_final <- as.data.frame(pov_status_final)
+colnames(pov_status_final) <- c('state', 'whitepov', 'blackpov', 'asianpov', 'hisppov',
+                       'whitedo', 'blackdo', 'asiando', 'hispdo')
+pov_status_final[, -1] <- apply(pov_status_final[, -1], 2, as.numeric)
+pov_status_final <- 
+  pov_status_final %>% na.omit()
+pov_status_final1 <- pov_status_final
+pov_status_final2 <- pov_status_final
+pov_status_final3 <- pov_status_final
+
+povplot <- ggplot() +
+  geom_point(data = pov_status_final, aes(x = whitepov, y = whitedo), col = "red") +
+  geom_smooth(data = pov_status_final, aes(x = whitepov, y = whitedo), method = "lm", se = F, col = "red") +
+  geom_point(data = pov_status_final1, aes(x = blackpov, y = blackdo), col = "green") +
+  geom_smooth(data = pov_status_final1, aes(x = blackpov, y = blackdo), method = "lm", se = F, col = "green") +
+  geom_point(data = pov_status_final2, aes(x = asianpov, y = asiando), col = "blue") +
+  geom_smooth(data = pov_status_final2, aes(x = asianpov, y = asiando), method = "lm", se = F, col = "blue") +
+  geom_point(data = pov_status_final3, aes(x = hisppov, y = hispdo), col = "orange") +
+  geom_smooth(data = pov_status_final3, aes(x = hisppov, y = hispdo), method = "lm", se = F, col = "orange") +
+  scale_x_continuous(breaks = seq(5, 45, 5), limits = c(5, 45)) +
+  scale_y_continuous(breaks = seq(0, 35, 5), limits = c(0, 35)) +
+  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n Based on Race in 2017",
+       x = "Percentage Whose Income is Below Poverty Level",
+       y = "School Dropout Rate",
        caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
   theme_classic()
 
-pov_status_white
-ggsave(filename = "pov_status_race_W_plot.png", plot = last_plot(), path = "final_project")
-
-pov_status_black <- pov_status_joined %>% 
-  filter(race == "Black") %>% 
-  ggplot(aes(x = black, y = drop_rate)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = F) +
-  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Blacks in 2017",
-       x = "Percentage of Blacks Whose Income is Below Poverty Level",
-       y = "School Dropout Rate for Blacks",
-       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
-  theme_classic()
-
-pov_status_black
-ggsave(filename = "pov_status_race_B_plot.png", plot = last_plot(), path = "final_project")
-
-pov_status_asian <- pov_status_joined %>% 
-  filter(race == "Asian") %>% 
-  ggplot(aes(x = asian, y = drop_rate)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = F) +
-  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Asians in 2017",
-       x = "Percentage of Asians Whose Income is Below Poverty Level",
-       y = "School Dropout Rate for Asians",
-       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
-  theme_classic()
-
-pov_status_asian
-ggsave(filename = "pov_status_race_A_plot.png", plot = last_plot(), path = "final_project")
-
-pov_status_hispanic <- pov_status_joined %>% 
-  filter(race == "Hispanic") %>% 
-  ggplot(aes(x = hispanic, y = drop_rate)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = F) +
-  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Hispanics in 2017",
-       x = "Percentage of Hispanics Whose Income is Below Poverty Level",
-       y = "School Dropout Rate for Hispanics",
-       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
-  theme_classic()
-
-pov_status_hispanic
-ggsave(filename = "pov_status_race_H_plot.png", plot = last_plot(), path = "final_project")
+povplot
+plot.new()
+legend("bottomleft", legend = c("White", "Black", "Asian", "Hispanic"),
+       col = c("red", "green", "blue", "orange"), lty = 1:2, cex = 0.8,
+       title = "Race", text.font = 4, bg = "lightblue")
 ```
 
