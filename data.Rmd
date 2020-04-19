@@ -14,15 +14,14 @@ library(ggplot2)
 library(tidycensus)
 library(readxl)
 library(janitor)
-
 library(ggmap)
 library(maps)
 library(mapdata)
 library(viridis)
-
 library(gganimate)
 library(gifski)
-devtools::install_github('thomasp85/gganimate')
+# devtools::install_github('thomasp85/gganimate')
+library(extrafont)
 ```
 
 
@@ -299,18 +298,6 @@ female1$geo_name = tolower(female1$geo_name)
 pov_status_female <- left_join(pov_status_sex, female1, by = "geo_name") %>% 
   mutate(drop_rate = (se_a12003b_002/se_a12003b_001)*100) %>% 
   select(geo_name, female, drop_rate)
-
-pov_status_female %>% 
-  ggplot(aes(x = female, y = drop_rate)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = F) +
-  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Females in 2017",
-       x = "Percentage of Females Whose Income is Below Poverty Level",
-       y = "School Dropout Rate for Females 16-19 Years",
-       caption = "Source: American Community Survey 2017") +
-  theme_classic()
-
-ggsave(filename = "pov_status_sex_F_plot.png", plot = last_plot(), path = "final_project")
 ```
 
 
@@ -323,19 +310,28 @@ male1$geo_name = tolower(male1$geo_name)
 pov_status_male <- left_join(pov_status_sex, male1, by = "geo_name") %>% 
   mutate(drop_rate = (se_a12003a_002/se_a12003a_001)*100) %>% 
   select(geo_name, male, drop_rate)
-
-pov_status_male %>% 
-  ggplot(aes(x = male, y = drop_rate)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = F) +
-  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n for Males in 2017",
-       x = "Percentage of Males Whose Income is Below Poverty Level",
-       y = "School Dropout Rate for Males 16-19 Years",
-       caption = "Source: American Community Survey 2017") +
-  theme_classic()
-
-ggsave(filename = "pov_status_sex_M_plot.png", plot = last_plot(), path = "final_project")
 ```
+
+
+```{r pov_status_sex_joined}
+pov_status_sex_plot <- ggplot() +
+  geom_point(data = pov_status_male, aes(x = male, y = drop_rate), col = "blue", alpha = 0.8) +
+  geom_smooth(data = pov_status_male, aes(x = male, y = drop_rate), method = "lm", se = F, col = "blue", alpha = 0.8) +
+  geom_point(data = pov_status_female, aes(x = female, y = drop_rate), col = "deeppink2", alpha = 0.8) +
+  geom_smooth(data = pov_status_female, aes(x = female, y = drop_rate), method = "lm", se = F, col = "deeppink2", alpha = 0.8) +
+  labs(title = "Relationship Between Poverty Status and School Dropout Rate \n Based on Sex in 2017",
+       x = "Percentage Whose Income is Below Poverty Level",
+       y = "School Dropout Rate",
+       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
+  annotate("text", x = 20, y = 3.5, label = "Sex", color = "black", size = 6) +
+  annotate("text", x = 21, y = 3, label = "Male", color = "black", size = 5.5) +
+  annotate("text", x = 21.5, y = 2.8, label = "Female", color = "black", size = 5.5) +
+  geom_segment(aes(x = 19, y = 3, xend = 20, yend = 3), col = "blue", data = pov_status_male) +
+  geom_segment(aes(x = 19, y = 2.8, xend = 20, yend = 2.8), col = "deeppink2", data = pov_status_female) +
+  theme_classic()
+pov_status_sex_plot
+```
+
 
 
 ```{r poverty_status_race}
@@ -370,7 +366,7 @@ pov_status_final1 <- pov_status_final
 pov_status_final2 <- pov_status_final
 pov_status_final3 <- pov_status_final
 
-povplot <- ggplot() +
+pov_plot <- ggplot() +
   geom_point(data = pov_status_final, aes(x = whitepov, y = whitedo), col = "darkolivegreen", alpha = 0.8) +
   geom_smooth(data = pov_status_final, aes(x = whitepov, y = whitedo), method = "lm", se = F, col = "darkolivegreen", alpha = 0.8) +
   geom_point(data = pov_status_final1, aes(x = blackpov, y = blackdo), col = "deeppink2", alpha = 0.8) +
@@ -385,12 +381,22 @@ povplot <- ggplot() +
        x = "Percentage Whose Income is Below Poverty Level",
        y = "School Dropout Rate",
        caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
-  theme(legend.position = "right") +
-  theme_classic()
+  annotate("text", x = 40, y = 15, label = "Race", color = "black", size = 6) +
+  annotate("text", x = 41, y = 12, label = "White", color = "black", size = 5.5) +
+  annotate("text", x = 41, y = 10, label = "Black", color = "black", size = 5.5) +
+  annotate("text", x = 41, y = 8, label = "Asian", color = "black", size = 5.5) +
+  annotate("text", x = 41.66, y = 6, label = "Hispanic", color = "black", size = 5.5) +
+  geom_segment(aes(x = 37.5, y = 12, xend = 39, yend = 12), col = "darkolivegreen", data = pov_status_final) +
+  geom_segment(aes(x = 37.5, y = 10, xend = 39, yend = 10), col = "deeppink2", data = pov_status_final) +
+  geom_segment(aes(x = 37.5, y = 8, xend = 39, yend = 8), col = "goldenrod", data = pov_status_final) +
+  geom_segment(aes(x = 37.5, y = 6, xend = 39, yend = 6), col = "midnightblue", data = pov_status_final) +
+  theme_classic() +
+  theme(plot.title = element_text(family = "AvantGarde", size = 20),
+        axis.text.y = element_text(size = 16), 
+        axis.text.x = element_text(size = 16), 
+        axis.title.y = element_text(size = 16),
+        axis.title.x = element_text(size = 16))
+pov_plot
 
-plot(povplot)
-legend("bottomleft", legend = c("White", "Black", "Asian", "Hispanic"),
-       col = c("red", "green", "blue", "orange"), lty = 1, cex = 0.8,
-       title = "Race", text.font = 1, box.lty = 0)
 ```
 
