@@ -39,6 +39,8 @@ us_states <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colora
 
 datapoints2 <- c("geo_name", "se_a13001a_001", "se_a13001a_002", "se_a13001b_001", "se_a13001b_002", "se_a13001d_001", "se_a13001d_002", "se_a13001h_001", "se_a13001h_002", "se_a13005_001", "se_a13005_003", "se_a13005_004")
 
+datapoints3 <- c("geo_name", "se_a17005a_001", "se_a17005a_003", "se_a17005b_001", "se_a17005b_003", "se_a17006a_001", "se_a17006a_003", "se_a17006b_001", "se_a17006b_003", "se_a17006d_001", "se_a17006d_003", "se_a17006h_001", "se_a17006h_003")
+
 # I downloaded the ACS file, transformed all the columns into character values
 # so that it could be loaded into a table, and skipped the first line so that
 # the first row of the tables shows the variable names. I cleaned the names in
@@ -78,6 +80,10 @@ pov_status <- read_csv("raw-data/R12518258_SL040.csv") %>%
   select(all_of(datapoints2))
 
 pov_status$geo_name <- tolower(pov_status$geo_name)
+
+unemp_data <- read_csv("raw-data/R12529099_SL040.csv") %>% 
+  clean_names() %>% 
+  select(all_of(datapoints3))
 ```
 
 
@@ -85,20 +91,10 @@ pov_status$geo_name <- tolower(pov_status$geo_name)
 # I downloaded data for the states, which is already stored in R. 
 
 states <- map_data("state")
-
-# I created a ggplot of the states just to see how the map would look like
-# before I added my own data to it.
-
-p <- ggplot(data = states, aes(x = long, 
-                   y = lat, group = group)) + 
-  geom_polygon(fill = "lightgray", 
-               color = "white") + 
-  coord_fixed(1.3) +
-  guides(fill = FALSE)
 ```
 
 
-```{r male_dropout}
+```{r dropout_sex}
 
 # My first task was to create a map displaying school graduation rates for the
 # male population. I filtered the ACS data, selecting the three variables I
@@ -127,10 +123,6 @@ male$region <- tolower(male$geo_name)
 
 male_new <- male %>% 
   select(region, total, drop, grad_rate, type)
-```
-
-
-```{r female_dropout}
 
 # I copied what I did for the male graduation rate table, applying it to the
 # female graduation rate. My first task was to create a map displaying school
@@ -160,10 +152,6 @@ female$region <- tolower(female$geo_name)
 
 female_new <- female %>% 
   select(region, total, drop, grad_rate, type)
-```
-
-
-```{r facet_grad}
 
 # I first combined the female and male graduation rates tables into a new tibble
 # called "both." Then I joined "both" with the states data to get "combo."
@@ -205,8 +193,6 @@ ggplot(combo, aes(x = long, y = lat, group = group, fill = grad_rate)) +
   theme(legend.position = "bottom", 
         plot.title = element_text(size = 10),
         plot.subtitle = element_text(size = 8))
-
-ggsave(filename = "gradsex_plot.png", plot = last_plot(), path = "final_project")
 ```
 
 
@@ -280,12 +266,10 @@ ggplot(combined_final, aes(x = long, y = lat, group = group, fill = pct, frame =
        caption = "Source: National Center for Education Statistics 2017",
        fill = "Graduation Rate") +
   transition_manual(race)
-
-anim_save(filename = "gradrace_plot.png", plot = last_animation(), path = "final_project")
 ```
 
 
-```{r poverty_status_sex_female}
+```{r poverty_status_sex}
 pov_status_sex <- pov_status %>% 
   mutate(male = (se_a13005_003/se_a13005_001) * 100) %>% 
   mutate(female = (se_a13005_004/se_a13005_001) * 100)
@@ -298,10 +282,6 @@ female1$geo_name = tolower(female1$geo_name)
 pov_status_female <- left_join(pov_status_sex, female1, by = "geo_name") %>% 
   mutate(drop_rate = (se_a12003b_002/se_a12003b_001)*100) %>% 
   select(geo_name, female, drop_rate)
-```
-
-
-```{r poverty_status_sex_male}
 
 # males
 male1 <- male
@@ -310,10 +290,7 @@ male1$geo_name = tolower(male1$geo_name)
 pov_status_male <- left_join(pov_status_sex, male1, by = "geo_name") %>% 
   mutate(drop_rate = (se_a12003a_002/se_a12003a_001)*100) %>% 
   select(geo_name, male, drop_rate)
-```
 
-
-```{r pov_status_sex_joined}
 pov_status_sex_plot <- ggplot() +
   geom_point(data = pov_status_male, aes(x = male, y = drop_rate), col = "blue", alpha = 0.8) +
   geom_smooth(data = pov_status_male, aes(x = male, y = drop_rate), method = "lm", se = F, col = "blue", alpha = 0.8) +
@@ -329,7 +306,6 @@ pov_status_sex_plot <- ggplot() +
   geom_segment(aes(x = 19, y = 3, xend = 20, yend = 3), col = "blue", data = pov_status_male) +
   geom_segment(aes(x = 19, y = 2.8, xend = 20, yend = 2.8), col = "deeppink2", data = pov_status_female) +
   theme_classic()
-pov_status_sex_plot
 ```
 
 
@@ -396,7 +372,169 @@ pov_plot <- ggplot() +
         axis.text.x = element_text(size = 16), 
         axis.title.y = element_text(size = 16),
         axis.title.x = element_text(size = 16))
-pov_plot
-
 ```
 
+
+
+```{r unemployment_sex}
+
+# for males
+male <- unemp_data %>% 
+  select(geo_name, 
+         se_a17005a_001, 
+         se_a17005a_003) %>% 
+  mutate(unemp = (se_a17005a_003/se_a17005a_001)*100) %>% 
+  mutate(type = "male") %>% 
+  mutate(region = geo_name)
+
+# I then turned all the states in the geo_name column into lowercase letters so
+# that it would facilitate the left_join function that I would later use.
+
+male$region <- tolower(male$geo_name)
+
+male <- male %>% 
+  select(region, unemp, type)
+
+# for females
+female <- unemp_data %>% 
+  select(geo_name, 
+         se_a17005b_001, 
+         se_a17005b_003) %>% 
+  mutate(unemp = (se_a17005b_003/se_a17005b_001)*100) %>% 
+  mutate(type = "female") %>% 
+  mutate(region = geo_name)
+
+# I then turned all the states in the geo_name column into lowercase letters so
+# that it would facilitate the left_join function that I would later use.
+
+female$region <- tolower(female$geo_name)
+
+female <- female %>% 
+  select(region, unemp, type)
+
+# I first combined the female and male graduation rates tables into a new tibble
+# called "both." Then I joined "both" with the states data to get "combo."
+both <- rbind(female, male)
+combo <- left_join(states, both, by = "region")
+
+ggplot(combo, aes(x = long, y = lat, group = group, fill = unemp)) +
+  geom_polygon(color = "white") +
+  coord_fixed(1.3) +
+  labs(title = "Unemployment Rates by Gender in 2017",
+       subtitle = "For Population 16 Years and Over",
+       caption = "Source: American Community Survey 2017",
+       fill = "Unemployment Rate") +
+  scale_fill_viridis(option = "viridis", 
+                     direction = -1, 
+                     guide = guide_colorbar(direction = "horizontal",
+                                            barheight = unit(2, units = "mm"),
+                                            barwidth = unit(35, units = "mm"),
+                                            draw.ulim = FALSE,
+                                            title.position = "top",
+                                            title.hjust = 0.5,
+                                            label.hjust = 0.5)) +
+  facet_wrap(~ type) +
+  theme_void() +
+  theme(legend.position = "bottom", 
+        plot.title = element_text(size = 10),
+        plot.subtitle = element_text(size = 8))
+```
+
+
+```{r unemployment_race}
+
+# for whites
+white <- unemp_data %>% 
+  select(geo_name, 
+         se_a17006a_001, 
+         se_a17006a_003) %>% 
+  mutate(unemp = (se_a17006a_003/se_a17006a_001)*100) %>% 
+  mutate(type = "white") %>% 
+  mutate(region = geo_name)
+
+# I then turned all the states in the geo_name column into lowercase letters so
+# that it would facilitate the left_join function that I would later use.
+
+white$region <- tolower(white$geo_name)
+
+white <- white %>% 
+  select(region, unemp, type)
+
+# for blacks
+black <- unemp_data %>% 
+  select(geo_name, 
+         se_a17006b_001, 
+         se_a17006b_003) %>% 
+  mutate(unemp = (se_a17006b_003/se_a17006b_001)*100) %>% 
+  mutate(type = "black") %>% 
+  mutate(region = geo_name)
+
+# I then turned all the states in the geo_name column into lowercase letters so
+# that it would facilitate the left_join function that I would later use.
+
+black$region <- tolower(black$geo_name)
+
+black <- black %>% 
+  select(region, unemp, type)
+
+# asian
+asian <- unemp_data %>% 
+  select(geo_name, 
+         se_a17006d_001, 
+         se_a17006d_003) %>% 
+  mutate(unemp = (se_a17006d_003/se_a17006d_001)*100) %>% 
+  mutate(type = "asian") %>% 
+  mutate(region = geo_name)
+
+# I then turned all the states in the geo_name column into lowercase letters so
+# that it would facilitate the left_join function that I would later use.
+
+asian$region <- tolower(asian$geo_name)
+
+asian <- asian %>% 
+  select(region, unemp, type)
+
+# hispanic
+hispanic <- unemp_data %>% 
+  select(geo_name, 
+         se_a17006h_001, 
+         se_a17006h_003) %>% 
+  mutate(unemp = (se_a17006h_003/se_a17006h_001)*100) %>% 
+  mutate(type = "hispanic") %>% 
+  mutate(region = geo_name)
+
+# I then turned all the states in the geo_name column into lowercase letters so
+# that it would facilitate the left_join function that I would later use.
+
+hispanic$region <- tolower(hispanic$geo_name)
+
+hispanic <- hispanic %>% 
+  select(region, unemp, type)
+
+# I first combined the female and male graduation rates tables into a new tibble
+# called "both." Then I joined "both" with the states data to get "combo."
+both <- rbind(white, black, asian, hispanic)
+combined <- left_join(states, both, by = "region")
+
+ggplot(combined, aes(x = long, y = lat, group = group, fill = unemp)) +
+  geom_polygon(color = "white") +
+  coord_fixed(1.3) +
+  labs(title = "Unemployment Rates by Race in 2017",
+       subtitle = "For Population 16 Years and Over",
+       caption = "Source: American Community Survey 2017",
+       fill = "Unemployment Rate") +
+  scale_fill_viridis(option = "plasma", 
+                     direction = -1, 
+                     guide = guide_colorbar(direction = "horizontal",
+                                            barheight = unit(2, units = "mm"),
+                                            barwidth = unit(35, units = "mm"),
+                                            draw.ulim = FALSE,
+                                            title.position = "top",
+                                            title.hjust = 0.5,
+                                            label.hjust = 0.5)) +
+  facet_wrap(~ type) +
+  theme_void() +
+  theme(legend.position = "bottom", 
+        plot.title = element_text(size = 10),
+        plot.subtitle = element_text(size = 8))
+```
