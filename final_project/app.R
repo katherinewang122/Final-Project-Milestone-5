@@ -104,22 +104,27 @@ ui <- fluidPage(
     tabPanel("Findings",
              titlePanel("Findings"),
              mainPanel(
-                 plotlyOutput("unemprace"),
+                 imageOutput("combinedrace1"),
+                 br(), br(), br(), br(), br(), br(), br(),
+                 br(), br(), br(),
+                 p("Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here 
+                   Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here
+                   Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here
+                   Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here
+                   Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here"),
+                 br(), br(),
+                 imageOutput("combinedsex1"),
+                 br(), br(), br(), br(), br(), br(), br(),
+                 plotlyOutput("regressionplot"),
                  br(), br(), br(), br(),
-                 plotlyOutput("gradrace"),
-                 br(), br(), br(), br(),
-                 plotlyOutput("unempsex"),
-                 br(), br(), br(), br(),
-                 plotlyOutput("gradsex")
+                 plotlyOutput("regressionplot1")
              )
              ),
     
     tabPanel("In-Depth Analysis",
              titlePanel("In-Depth Analysis"),
              mainPanel(
-                 plotlyOutput("regressionplot"),
-                 br(), br(),
-                 plotlyOutput("regressionplot1")
+                 br()
              )
              ),
     
@@ -151,153 +156,26 @@ ui <- fluidPage(
              ratio among the states, which measures a community's gender 
              inequality."),
              h3("About Me"),
-             p("My name is Katherine, and I plan to concentrate in social studies.
+             p("My name is Katherine, and I plan to concentrate in social studies
+             with a secondary in economics.
              You can reach me at katherinewang1@college.harvard.edu.")))
     )
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
-    output$gradrace <- renderPlotly({
-        # I removed the first row since it shows the graduation rate for the entire
-        # nation, not the states. I then created a new column, region, which transformed
-        # all the states' names into lowercase letters, which will facilitate combining
-        # it with the states data. Next, I made four individual tibbles for the four
-        # different races. For each of these tibbles, I created a new variable, race,
-        # which will help me facet them later on. I also renamed all of their
-        # percentages into a common variable, pct, so that I can combine them.
-        
-        race_grad <- nces2017[-1,]
-        race_grad$region <- tolower(race_grad$"1")
-        combined_race <- left_join(states, race_grad, by = "region")
-        
-        white <- race_grad %>% 
-            mutate(race = "White", pct = race_grad$"9") %>% 
-            select(region, race, pct)
-        
-        black <- race_grad %>% 
-            mutate(race = "Black", pct = race_grad$"10") %>% 
-            select(region, race, pct)
-        
-        hispanic <- race_grad %>% 
-            mutate(race = "Hispanic", pct = race_grad$"11") %>% 
-            select(region, race, pct)
-        
-        asian <- race_grad %>% 
-            mutate(race = "Asian", pct = race_grad$"12") %>% 
-            select(region, race, pct)
-        
-        # Since I only know how to use rbind on two tibbles at a time, I used a separate
-        # rbind function each time I joined two new tibbles to each other. For the final
-        # combination, I used a left join to link the states data with the combined race
-        # data, using their common variable, region.
-        
-        combineda <- rbind(white, black)
-        combinedb <- rbind(combineda, hispanic)
-        combinedc <- rbind(combinedb, asian)
-        combined_final <- left_join(states, combinedc, by = "region")
-            
-        p1 <- ggplot(combined_final, aes(x = long, y = lat, group = group, 
-                                         fill = pct, frame = race)) +
-            geom_polygon(color = "white") +
-            scale_fill_viridis(option = "magma", 
-                               direction = -1, 
-                               breaks = c(70, 80, 90), 
-                               labels = c("70%", "80%", "90%")) +
-            theme_void() +
-            coord_fixed(1.3) +
-            labs(title = "School Graduation Rate by Race in 2017",
-                 caption = "Source: National Center for Education Statistics 2017",
-                 fill = "Graduation Rate")
-        
-        p1 <- p1 %>%
-            animation_opts(1000, easing = "linear", redraw = FALSE) %>%
-            animation_slider(
-                currentvalue = list(prefix = "Race: ", font = list(color = "black"))
-            )
-        ggplotly(p1)
-    })
+    output$combinedrace1 <- renderImage({
+        list(src = "combined_race.gif",
+             alt = "combined_race.gif",
+             width = 700,
+             height = 700)}, 
+            deleteFile = FALSE)
     
-    output$gradsex <- renderPlotly({
-        # My first task was to create a map displaying school graduation rates for the
-        # male population. I filtered the ACS data, selecting the three variables I
-        # needed, and created a new variable, grad_rate, to help me measure the percent
-        # of those who graduated. I created another variable, type, to remind me that
-        # this was for the male population, just in case I choose to combine the female
-        # and male datasets later on. I renamed some variables into names that held
-        # meaning for the user.
-        
-        male <- acs %>% 
-            select(geo_name, 
-                   se_a12003a_001, 
-                   se_a12003a_002) %>% 
-            mutate(grad_rate = 100 - (se_a12003a_002/se_a12003a_001)*100) %>% 
-            mutate(type = "male") %>% 
-            mutate(total = se_a12003a_001, drop = se_a12003a_002) %>% 
-            mutate(region = geo_name)
-        
-        # I then turned all the states in the geo_name column into lowercase letters so
-        # that it would facilitate the left_join function that I would later use.
-        
-        male$region <- tolower(male$geo_name)
-        
-        # I creatd a new male graduation rate tibble that only selected the variables I
-        # needed.
-        
-        male_new <- male %>% 
-            select(region, total, drop, grad_rate, type)
-        
-        female <- acs %>% 
-            select(geo_name, 
-                   se_a12003b_001, 
-                   se_a12003b_002) %>% 
-            mutate(grad_rate = 100 - (se_a12003b_002/se_a12003b_001)*100) %>% 
-            mutate(type = "female") %>% 
-            mutate(total = se_a12003b_001, drop = se_a12003b_002) %>% 
-            mutate(region = geo_name)
-        
-        # I then turned all the states in the geo_name column into lowercase letters so
-        # that it would facilitate the left_join function that I would later use.
-        
-        female$region <- tolower(female$geo_name)
-        
-        # I creatd a new female graduation rate tibble that only selected the variables
-        # I needed.
-        
-        female_new <- female %>% 
-            select(region, total, drop, grad_rate, type)
-        
-        # I first combined the female and male graduation rates tables into a new tibble
-        # called "both." Then I joined "both" with the states data to get "combo."
-        both <- rbind(female_new, male_new)
-        combo <- left_join(states, both, by = "region") %>% 
-            mutate_if(is.numeric, ~round(., 1))
-        
-        p2 <- ggplot(combo, aes(x = long, y = lat, group = group, fill = grad_rate)) +
-            geom_polygon(color = "white") +
-            coord_fixed(1.3) +
-            labs(title = "School Graduation Rates by Gender in 2017",
-                 subtitle = "For Population 16-19 Years",
-                 caption = "Source: American Community Survey 2017",
-                 fill = "Graduation Rate") +
-            scale_fill_viridis(option = "viridis", 
-                               direction = -1, 
-                               guide = guide_colorbar(direction = "horizontal",
-                                                      barheight = unit(2, units = "mm"),
-                                                      barwidth = unit(35, units = "mm"),
-                                                      draw.ulim = FALSE,
-                                                      title.position = "top",
-                                                      title.hjust = 0.5,
-                                                      label.hjust = 0.5),
-                               breaks = c(93, 95, 97), 
-                               labels = c("93%", "95%", "97%")) +
-            facet_wrap(~ type) +
-            theme_void() +
-            theme(legend.position = "bottom", 
-                  plot.title = element_text(size = 10),
-                  plot.subtitle = element_text(size = 8))
-        
-        ggplotly(p2)
-    })
+    output$combinedsex1 <- renderImage({
+        list(src = "combined_sex.gif",
+             alt = "combined_sex.gif",
+             width = 700,
+             height = 700)}, 
+        deleteFile = FALSE)
     
     output$regressionplot <- renderPlotly({
         pov_status_race <- pov_status %>% 
@@ -360,12 +238,7 @@ server <- function(input, output, session) {
             geom_segment(aes(x = 37.5, y = 10, xend = 39, yend = 10), col = "deeppink2", data = pov_status_final) +
             geom_segment(aes(x = 37.5, y = 8, xend = 39, yend = 8), col = "goldenrod", data = pov_status_final) +
             geom_segment(aes(x = 37.5, y = 6, xend = 39, yend = 6), col = "midnightblue", data = pov_status_final) +
-            theme_classic() +
-            theme(plot.title = element_text(family = "serif", size = 20),
-                  axis.text.y = element_text(size = 16), 
-                  axis.text.x = element_text(size = 16), 
-                  axis.title.y = element_text(size = 16),
-                  axis.title.x = element_text(size = 16))
+            theme_classic()
         ggplotly(p3)
     })
     
@@ -429,15 +302,16 @@ server <- function(input, output, session) {
             geom_smooth(data = pov_status_male, aes(x = male, y = drop_rate), method = "lm", se = F, col = "blue", alpha = 0.8) +
             geom_point(data = pov_status_female, aes(x = female, y = drop_rate), col = "deeppink2", alpha = 0.8) +
             geom_smooth(data = pov_status_female, aes(x = female, y = drop_rate), method = "lm", se = F, col = "deeppink2", alpha = 0.8) +
+            scale_x_continuous(breaks = seq(3, 13, 1), limits = c(3, 13)) +
             labs(title = "Relationship Between Poverty Status and School Dropout Rate \n Based on Sex in 2017",
                  x = "Percentage Whose Income is Below Poverty Level",
                  y = "School Dropout Rate",
                  caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
-            annotate("text", x = 20, y = 3.5, label = "Sex", color = "black", size = 6) +
-            annotate("text", x = 21, y = 3, label = "Male", color = "black", size = 5.5) +
-            annotate("text", x = 21.5, y = 2.8, label = "Female", color = "black", size = 5.5) +
-            geom_segment(aes(x = 19, y = 3, xend = 20, yend = 3), col = "blue", data = pov_status_male) +
-            geom_segment(aes(x = 19, y = 2.8, xend = 20, yend = 2.8), col = "deeppink2", data = pov_status_female) +
+            annotate("text", x = 12.1, y = 3.5, label = "Sex", color = "black", size = 5) +
+            annotate("text", x = 12.4, y = 3.1, label = "Male", color = "black", size = 4) +
+            annotate("text", x = 12.5, y = 2.7, label = "Female", color = "black", size = 4) +
+            geom_segment(aes(x = 11.7, y = 3.1, xend = 12, yend = 3.1), col = "blue", data = pov_status_male) +
+            geom_segment(aes(x = 11.7, y = 2.7, xend = 12, yend = 2.7), col = "deeppink2", data = pov_status_female) +
             theme_classic()
         ggplotly(p4)
     })
@@ -503,111 +377,9 @@ server <- function(input, output, session) {
                                breaks = c(4, 6, 8), 
                                labels = c("4%", "6%", "8%")) +
             facet_wrap(~ type) +
-            theme_void() +
-            theme(legend.position = "bottom", 
-                  plot.title = element_text(size = 10),
-                  plot.subtitle = element_text(size = 8))
+            theme_classic()
     })
     
-    output$unemprace <- renderPlotly({
-        # for males
-        white <- unemp_data %>% 
-            select(geo_name, 
-                   se_a17006a_001, 
-                   se_a17006a_003) %>% 
-            mutate(unemp = (se_a17006a_003/se_a17006a_001)*100) %>% 
-            mutate(type = "white") %>% 
-            mutate(region = geo_name)
-        
-        # I then turned all the states in the geo_name column into lowercase letters so
-        # that it would facilitate the left_join function that I would later use.
-        
-        white$region <- tolower(white$geo_name)
-        
-        white <- white %>% 
-            select(region, unemp, type)
-        
-        # for females
-        black <- unemp_data %>% 
-            select(geo_name, 
-                   se_a17006b_001, 
-                   se_a17006b_003) %>% 
-            mutate(unemp = (se_a17006b_003/se_a17006b_001)*100) %>% 
-            mutate(type = "black") %>% 
-            mutate(region = geo_name)
-        
-        # I then turned all the states in the geo_name column into lowercase letters so
-        # that it would facilitate the left_join function that I would later use.
-        
-        black$region <- tolower(black$geo_name)
-        
-        black <- black %>% 
-            select(region, unemp, type)
-        
-        # asian
-        asian <- unemp_data %>% 
-            select(geo_name, 
-                   se_a17006d_001, 
-                   se_a17006d_003) %>% 
-            mutate(unemp = (se_a17006d_003/se_a17006d_001)*100) %>% 
-            mutate(type = "asian") %>% 
-            mutate(region = geo_name)
-        
-        # I then turned all the states in the geo_name column into lowercase letters so
-        # that it would facilitate the left_join function that I would later use.
-        
-        asian$region <- tolower(asian$geo_name)
-        
-        asian <- asian %>% 
-            select(region, unemp, type)
-        
-        # hispanic
-        hispanic <- unemp_data %>% 
-            select(geo_name, 
-                   se_a17006h_001, 
-                   se_a17006h_003) %>% 
-            mutate(unemp = (se_a17006h_003/se_a17006h_001)*100) %>% 
-            mutate(type = "hispanic") %>% 
-            mutate(region = geo_name)
-        
-        # I then turned all the states in the geo_name column into lowercase letters so
-        # that it would facilitate the left_join function that I would later use.
-        
-        hispanic$region <- tolower(hispanic$geo_name)
-        
-        hispanic <- hispanic %>% 
-            select(region, unemp, type)
-        
-        # I first combined the female and male graduation rates tables into a new tibble
-        # called "both." Then I joined "both" with the states data to get "combo."
-        both <- rbind(white, black, asian, hispanic)
-        combined <- left_join(states, both, by = "region") %>% 
-            mutate_if(is.numeric, ~round(., 1))
-        
-        ggplot(combined, aes(x = long, y = lat, group = group, fill = unemp)) +
-            geom_polygon(color = "white") +
-            coord_fixed(1.3) +
-            labs(title = "Unemployment Rates by Race in 2017",
-                 subtitle = "For Population 16 Years and Over",
-                 caption = "Source: American Community Survey 2017",
-                 fill = "Unemployment Rate") +
-            scale_fill_viridis(option = "plasma", 
-                               direction = -1, 
-                               guide = guide_colorbar(direction = "horizontal",
-                                                      barheight = unit(2, units = "mm"),
-                                                      barwidth = unit(35, units = "mm"),
-                                                      draw.ulim = FALSE,
-                                                      title.position = "top",
-                                                      title.hjust = 0.5,
-                                                      label.hjust = 0.5),
-                               breaks = c(4, 8, 12, 16), 
-                               labels = c("4%", "8%", "12%", "16%")) +
-            facet_wrap(~ type) +
-            theme_void() +
-            theme(legend.position = "bottom", 
-                  plot.title = element_text(size = 10),
-                  plot.subtitle = element_text(size = 8))
-    })
 }
 
 # Run the application 
