@@ -1,0 +1,12 @@
+name: schools_as_social_mirrors
+title: schools_as_social_mirrors
+username:
+account: katherine-wang
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2191708
+bundleId: 3069455
+url: https://katherine-wang.shinyapps.io/schools_as_social_mirrors/
+when: 1587952824.74942
+asMultiple: FALSE
+asStatic: FALSE

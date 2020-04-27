@@ -5,8 +5,8 @@ account: katherine-wang
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2047449
-bundleId: 2962040
+bundleId: 3062062
 url: https://katherine-wang.shinyapps.io/final_project/
-when: 1585873318.71346
+when: 1587774359.37148
 asMultiple: FALSE
 asStatic: FALSE

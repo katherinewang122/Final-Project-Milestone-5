@@ -44,6 +44,8 @@ datapoints2 <- c("geo_name", "se_a13001a_001", "se_a13001a_002", "se_a13001b_001
 
 datapoints3 <- c("geo_name", "se_a17005a_001", "se_a17005a_003", "se_a17005b_001", "se_a17005b_003", "se_a17006a_001", "se_a17006a_003", "se_a17006b_001", "se_a17006b_003", "se_a17006d_001", "se_a17006d_003", "se_a17006h_001", "se_a17006h_003")
 
+datapoints4 <- c("geo_name", "se_a12003a_001", "se_a12003a_002", "se_a12003b_001", "se_a12003b_002", "se_a17005a_001", "se_a17005a_003", "se_a17005b_001", "se_a17005b_003", "se_a17006a_001", "se_a17006a_003", "se_a17006b_001", "se_a17006b_003", "se_a17006d_001", "se_a17006d_003", "se_a17006h_001", "se_a17006h_003")
+
 # I downloaded the ACS file, transformed all the columns into character values
 # so that it could be loaded into a table, and skipped the first line so that
 # the first row of the tables shows the variable names. I cleaned the names in
@@ -87,13 +89,125 @@ pov_status$geo_name <- tolower(pov_status$geo_name)
 unemp_data <- read_csv("raw-data/R12529099_SL040.csv") %>% 
   clean_names() %>% 
   select(all_of(datapoints3))
+
+county_data <- read_csv("raw-data/R12536075_SL050.csv") %>% 
+  clean_names() %>% 
+  select(all_of(datapoints4)) %>% 
+  mutate(subregion = sapply(strsplit(county_data$geo_name, " County"), "[", 1)) %>% 
+  mutate(region = sapply(strsplit(county_data$geo_name, ", "), "[", -1))
+county_data$subregion <- tolower(county_data$subregion)
+county_data$region <- tolower(county_data$region)
+```
+
+
+```{r dropout_sex}
+
+#dropout based on sex
+dropout_county_male <- county_data %>% 
+  select(region, subregion, se_a12003a_001, se_a12003a_002) %>% 
+  mutate(drop_rate = (se_a12003a_002/se_a12003a_001)*100) %>% 
+  mutate(type = "male") %>% 
+  select(region, subregion, drop_rate, type)
+
+dropout_county_female <- county_data %>% 
+  select(region, subregion, se_a12003b_001, se_a12003b_002) %>% 
+  mutate(drop_rate = (se_a12003b_002/se_a12003b_001)*100) %>% 
+  mutate(type = "female") %>% 
+  select(region, subregion, drop_rate, type)
+
+dropout_county_both <- rbind(dropout_county_male, dropout_county_female)
+dropout_county <- full_join(county, dropout_county_both, by = c("region", "subregion")) %>% 
+  na.omit()
+
+dropout_county %>% filter(region == input$state) %>% 
+                ggplot(aes(x = long, y = lat, group = group, fill = drop_rate)) +
+                geom_polygon(color = "white") +
+                facet_wrap(~ type) +
+                labs(title = "School Dropout Rate for 16-19 Year Old Students \n By Sex in 2017",
+                     subtitle = "New York County Level Data",
+                     caption = "Source: American Community Survey 2017",
+                     fill = "Dropout Rate") +
+                scale_fill_viridis(option = "magma", 
+                                   direction = -1,
+                                   guide = guide_colorbar(direction = "horizontal",
+                                                          barheight = unit(2, units = "mm"),
+                                                          barwidth = unit(35, units = "mm"),
+                                                          draw.ulim = FALSE,
+                                                          title.position = "top",
+                                                          title.hjust = 0.5,
+                                                          label.hjust = 0.5)) +
+                theme(legend.position = "bottom",
+                      legend.spacing.x = unit(1, 'cm')) +
+                theme_void()
+```
+
+
+```{r ny_unemp_sex}
+#combine all
+dropout_county_male <- county_data %>% 
+  select(region, subregion, se_a12003a_001, se_a12003a_002) %>% 
+  mutate(data = (se_a12003a_002/se_a12003a_001)*100) %>% 
+  mutate(type = "male") %>% 
+  mutate(datatype = "droprate") %>% 
+  select(region, subregion, data, type, datatype)
+
+dropout_county_female <- county_data %>% 
+  select(region, subregion, se_a12003b_001, se_a12003b_002) %>% 
+  mutate(data = (se_a12003b_002/se_a12003b_001)*100) %>% 
+  mutate(type = "female") %>% 
+  mutate(datatype = "droprate") %>% 
+  select(region, subregion, data, type, datatype)
+
+dropout_county_both <- rbind(dropout_county_male, dropout_county_female)
+
+unemp_county_male <- county_data %>% 
+  select(region, subregion, se_a17005a_001, se_a17005a_003) %>% 
+  mutate(data = (se_a17005a_003/se_a17005a_001)*100) %>% 
+  mutate(type = "male") %>% 
+  mutate(datatype = "unemp") %>% 
+  select(region, subregion, data, type, datatype)
+
+unemp_county_female <- county_data %>% 
+  select(region, subregion, se_a17005b_001, se_a17005b_003) %>% 
+  mutate(data = (se_a17005b_003/se_a17005b_001)*100) %>% 
+  mutate(type = "female") %>% 
+  mutate(datatype = "unemp") %>% 
+  select(region, subregion, data, type, datatype)
+
+unemp_county_both <- rbind(unemp_county_male, unemp_county_female)
+county_all <- rbind(unemp_county_both, dropout_county_both)
+county_all_final <- left_join(county, county_all, by = c("region", "subregion"))
+
+county_all_final %>% 
+  filter(region == input$state) %>%
+  filter(datatype == input$variable) %>% 
+  ggplot(aes(x = long, y = lat, group = group, fill = data)) +
+  geom_polygon(color = "white") +
+  facet_wrap(~ type) +
+  labs(title = "Unemployment Rate for Civilians 16+ Years in Labor Force \n By Sex in 2017",
+       subtitle = "New York County Level Data",
+       caption = "Source: American Community Survey 2017",
+       fill = "Unemployment Rate") +
+  scale_fill_viridis(option = "viridis", 
+                     direction = -1,
+                     guide = guide_colorbar(direction = "horizontal",
+                                            barheight = unit(2, units = "mm"),
+                                            barwidth = unit(35, units = "mm"),
+                                            draw.ulim = FALSE,
+                                            title.position = "top",
+                                            title.hjust = 0.5,
+                                            label.hjust = 0.5)) +
+   theme(legend.position = "bottom",
+        legend.spacing.x = unit(1, 'cm')) +
+  theme_void()
 ```
 
 
 ```{r states}
 
-# I downloaded data for the states, which is already stored in R. 
+# I downloaded data for the states and counties, which is already stored in R. 
 states <- map_data("state")
+county <- map_data("county")
 ```
 
 
@@ -461,7 +575,7 @@ pov_plot <- ggplot() +
   annotate("text", x = 41, y = 12, label = "White", color = "black", size = 5.5) +
   annotate("text", x = 41, y = 10, label = "Black", color = "black", size = 5.5) +
   annotate("text", x = 41, y = 8, label = "Asian", color = "black", size = 5.5) +
-  annotate("text", x = 41.66, y = 6, label = "Hispanic", color = "black", size = 5.5) +
+  annotate("text", x = 41.3, y = 6, label = "Hispanic", color = "black", size = 5.5) +
   geom_segment(aes(x = 37.5, y = 12, xend = 39, yend = 12), col = "darkolivegreen", data = pov_status_final) +
   geom_segment(aes(x = 37.5, y = 10, xend = 39, yend = 10), col = "deeppink2", data = pov_status_final) +
   geom_segment(aes(x = 37.5, y = 8, xend = 39, yend = 8), col = "goldenrod", data = pov_status_final) +
