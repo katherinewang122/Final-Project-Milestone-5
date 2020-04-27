@@ -128,14 +128,8 @@ ui <- fluidPage(
              mainPanel(
                  imageOutput("combinedrace1"),
                  br(), br(), br(), br(), br(), br(), br(),
-                 br(), br(), br(), br(), br(), br(), br(),
-                 p("Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here 
-                   Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here
-                   Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here
-                   Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here
-                   Paragraph here Paragraph here Paragraph here Paragraph here Paragraph here"),
-                 br(), br(),
                  imageOutput("combinedsex1"),
+                 br(), br(), br(), br(), br(), br(), br(),
                  br(), br(), br(), br(), br(), br(), br(),
                  plotOutput("regressionplot"),
                  br(), br(), br(), br(),
@@ -147,33 +141,33 @@ ui <- fluidPage(
              titlePanel("In-Depth Analysis"),
              sidebarPanel(
                  selectInput("state", "State: ",
-                             c("Alabama" = "Alabama", # no alaska
-                               "Arizona" = "Arizona", 
-                               "Arkansas" = "Arkansas", "California" = "California", 
-                               "Colorado" = "Colorado", 
-                               "Connecticut" = "Connecticut", 
-                               "Delaware" = "Delaware", "Florida" = "Florida", 
-                               "Georgia" = "Georgia", # no hawaii
-                               "Idaho" = "Idaho", "Illinois" = "Illinois", 
-                               "Indiana" = "Indiana", "Iowa" = "Iowa", 
-                               "Kansas" = "Kansas", "Kentucky" = "Kentucky", 
-                               "Louisiana" = "Louisiana", "Maine" = "Maine", 
-                               "Maryland" = "Maryland", "Massachusetts" = "Massachusetts", 
-                               "Michigan" = "Michigan", "Minnesota" = "Minnesota", 
-                               "Mississippi" = "Mississippi", "Missouri" = "Missouri",
-                               "Montana" = "Montana", "Nebraska" = "Nebraska", 
-                               "Nevada" = "Nevada", "New Hampshire" = "New Hampshire", 
-                               "New Jersey" = "New Jersey", "New Mexico" = "New Mexicoo", 
-                               "New York" = "New York", "North Carolina" = "North Carolina", 
-                               "North Dakota" = "North Dakota", "Ohio" = "Ohio", 
-                               "Oklahoma" = "Oklahoma", "Oregon" = "Oregon", 
-                               "Pennsylvania" = "Pennsylvania", "Rhode Island" = "Rhode Island", 
-                               "South Carolina" = "South Carolina", 
-                               "South Dakota" = "South Dakota", "Tennessee" = "Tennessee", 
-                               "Texas" = "Texas", "Utah" = "Utah", 
-                               "Vermont" = "Vermont", "Virginia" = "Virginia", 
-                               "Washington" = "Washington", "West Virginia" = "West Virginia", 
-                               "Wisconsin" = "Wisconsin", "Wyoming" = "Wyoming")),
+                             c("Alabama" = "ALABAMA", # no alaska
+                               "Arizona" = "ALABAMA", 
+                               "Arkansas" = "ARKANSAS", "California" = "CALIFORNIA", 
+                               "Colorado" = "COLORADO", 
+                               "Connecticut" = "CONNECTICUT", 
+                               "Delaware" = "DELAWARE", "Florida" = "FLORIDA", 
+                               "Georgia" = "GEORGIA", # no hawaii
+                               "Idaho" = "IDAHO", "Illinois" = "ILLINOIS", 
+                               "Indiana" = "INDIANA", "Iowa" = "IOWA", 
+                               "Kansas" = "KANSAS", "Kentucky" = "KENTUCKY", 
+                               "Louisiana" = "LUOISIANA", "Maine" = "MAINE", 
+                               "Maryland" = "MARYLAND", "Massachusetts" = "MASSACHUSETTS", 
+                               "Michigan" = "MICHIGAN", "Minnesota" = "MINNESOTA", 
+                               "Mississippi" = "MISSISSIPPI", "Missouri" = "MISSOURI",
+                               "Montana" = "MONTANA", "Nebraska" = "NEBRASKA", 
+                               "Nevada" = "NEVADA", "New Hampshire" = "NEW HAMPSHIRE", 
+                               "New Jersey" = "NEW JERSEY", "New Mexico" = "NEW MEXICO", 
+                               "New York" = "NEW YORK", "North Carolina" = "NORTH CAROLINA", 
+                               "North Dakota" = "NORTH DAKOTA", "Ohio" = "OHIO", 
+                               "Oklahoma" = "OKLAHOMA", "Oregon" = "OREGON", 
+                               "Pennsylvania" = "PENNSYLVANIA", "Rhode Island" = "RHODE ISLAND", 
+                               "South Carolina" = "SOUTH CAROLINA", 
+                               "South Dakota" = "SOUTH DAKOTA", "Tennessee" = "TENNESSEE", 
+                               "Texas" = "TEXAS", "Utah" = "UTAH", 
+                               "Vermont" = "VERMONT", "Virginia" = "VIRGINIA", 
+                               "Washington" = "WASHINGTON", "West Virginia" = "WEST VIRGINIA", 
+                               "Wisconsin" = "WISCONSIN", "Wyoming" = "WYOMING")),
                  selectInput("variable", "Variable: ",
                              c("School Dropout Rate" = "Dropout Rate",
                                "Unemployment Rate" = "Unemployment Rate"))
@@ -371,8 +365,8 @@ server <- function(input, output, session) {
     
     output$county_plot <- renderPlot({
         
-        if(input$state == " ") {
-            return()
+        if(input$state == "") {
+            return(NULL)
         }
         
         dropout_county_male <- county_data %>% 
@@ -409,12 +403,8 @@ server <- function(input, output, session) {
         county_all <- rbind(unemp_county_both, dropout_county_both)
         county_all_final <- left_join(county, county_all, by = c("region", "subregion"))
         
-        capFirst <- function(s) {
-            paste(toupper(substring(s, 1, 1)), substring(s, 2), sep = "")
-        }
-        
-        county_all_final$region <- capFirst(county_all_final$region)
-        county_all_final$type <- capFirst(county_all_final$type)
+        county_all_final$type <- toupper(county_all_final$type)
+        county_all_final$region <- toupper(county_all_final$region)
         
         county_all_final %>% 
             filter(region == input$state) %>%
@@ -422,12 +412,11 @@ server <- function(input, output, session) {
             ggplot(aes(x = long, y = lat, group = group, fill = data)) +
             geom_polygon(color = "white") +
             facet_wrap(~ type) +
-            labs(title = paste(input$variable, "in", input$state, "By Sex in 2017"),
-                 subtitle = paste(input$state, "County Level Data"),
+            labs(title = paste(input$state, "| Map of", input$variable, "by Sex in 2017"),
+                 subtitle = paste("County Level Data"),
                  caption = "Source: American Community Survey 2017",
                  fill = input$variable) +
-
-            scale_fill_viridis(option = "viridis", 
+            scale_fill_viridis(option = "magma", 
                                direction = -1,
                                guide = guide_colorbar(direction = "horizontal",
                                                       barheight = unit(2, units = "mm"),

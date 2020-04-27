@@ -25,6 +25,7 @@ library(extrafont)
 library(data.table)
 library(sf)
 library(here)
+library(tis)
 ```
 
 
@@ -144,43 +145,47 @@ dropout_county %>% filter(region == input$state) %>%
 
 ```{r ny_unemp_sex}
 #combine all
-dropout_county_male <- county_data %>% 
-  select(region, subregion, se_a12003a_001, se_a12003a_002) %>% 
-  mutate(data = (se_a12003a_002/se_a12003a_001)*100) %>% 
-  mutate(type = "male") %>% 
-  mutate(datatype = "droprate") %>% 
-  select(region, subregion, data, type, datatype)
-
-dropout_county_female <- county_data %>% 
-  select(region, subregion, se_a12003b_001, se_a12003b_002) %>% 
-  mutate(data = (se_a12003b_002/se_a12003b_001)*100) %>% 
-  mutate(type = "female") %>% 
-  mutate(datatype = "droprate") %>% 
-  select(region, subregion, data, type, datatype)
-
-dropout_county_both <- rbind(dropout_county_male, dropout_county_female)
-
-unemp_county_male <- county_data %>% 
-  select(region, subregion, se_a17005a_001, se_a17005a_003) %>% 
-  mutate(data = (se_a17005a_003/se_a17005a_001)*100) %>% 
-  mutate(type = "male") %>% 
-  mutate(datatype = "unemp") %>% 
-  select(region, subregion, data, type, datatype)
-
-unemp_county_female <- county_data %>% 
-  select(region, subregion, se_a17005b_001, se_a17005b_003) %>% 
-  mutate(data = (se_a17005b_003/se_a17005b_001)*100) %>% 
-  mutate(type = "female") %>% 
-  mutate(datatype = "unemp") %>% 
-  select(region, subregion, data, type, datatype)
+ dropout_county_male <- county_data %>% 
+            select(region, subregion, se_a12003a_001, se_a12003a_002) %>% 
+            mutate(data = (se_a12003a_002/se_a12003a_001)*100) %>% 
+            mutate(type = "male") %>% 
+            mutate(datatype = "Dropout Rate") %>% 
+            select(region, subregion, data, type, datatype)
+        
+        dropout_county_female <- county_data %>% 
+            select(region, subregion, se_a12003b_001, se_a12003b_002) %>% 
+            mutate(data = (se_a12003b_002/se_a12003b_001)*100) %>% 
+            mutate(type = "female") %>% 
+            mutate(datatype = "Dropout Rate") %>% 
+            select(region, subregion, data, type, datatype)
+        
+        dropout_county_both <- rbind(dropout_county_male, dropout_county_female)
+        
+        unemp_county_male <- county_data %>% 
+            select(region, subregion, se_a17005a_001, se_a17005a_003) %>% 
+            mutate(data = (se_a17005a_003/se_a17005a_001)*100) %>% 
+            mutate(type = "male") %>% 
+            mutate(datatype = "Unemployment Rate") %>% 
+            select(region, subregion, data, type, datatype)
+        
+        unemp_county_female <- county_data %>% 
+            select(region, subregion, se_a17005b_001, se_a17005b_003) %>% 
+            mutate(data = (se_a17005b_003/se_a17005b_001)*100) %>% 
+            mutate(type = "female") %>% 
+            mutate(datatype = "Unemployment Rate") %>% 
+            select(region, subregion, data, type, datatype)
 
 unemp_county_both <- rbind(unemp_county_male, unemp_county_female)
 county_all <- rbind(unemp_county_both, dropout_county_both)
 county_all_final <- left_join(county, county_all, by = c("region", "subregion"))
 
+        county_all_final$type <- toupper(county_all_final$type)
+        county_all_final$region <- toupper(county_all_final$region)
+        
+        
 county_all_final %>% 
-  filter(region == input$state) %>%
-  filter(datatype == input$variable) %>% 
+  filter(region == "ALABAMA") %>%
+  filter(datatype == "Dropout Rate") %>% 
   ggplot(aes(x = long, y = lat, group = group, fill = data)) +
   geom_polygon(color = "white") +
   facet_wrap(~ type) +
