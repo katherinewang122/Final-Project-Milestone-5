@@ -5,8 +5,8 @@ account: katherine-wang
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2191708
-bundleId: 3069455
+bundleId: 3072418
 url: https://katherine-wang.shinyapps.io/schools_as_social_mirrors/
-when: 1587952824.74942
+when: 1588002939.24487
 asMultiple: FALSE
 asStatic: FALSE

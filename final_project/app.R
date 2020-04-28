@@ -137,8 +137,8 @@ ui <- fluidPage(
              )
              ),
     
-    tabPanel("In-Depth Analysis",
-             titlePanel("In-Depth Analysis"),
+    tabPanel("In-Depth Analysis of Gender Inequality",
+             titlePanel("In-Depth Analysis of Gender Inequality"),
              sidebarPanel(
                  selectInput("state", "State: ",
                              c("Alabama" = "ALABAMA", # no alaska
