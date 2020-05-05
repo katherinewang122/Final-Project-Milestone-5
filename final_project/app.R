@@ -173,7 +173,9 @@ ui <- fluidPage(
                                "Unemployment Rate" = "Unemployment Rate"))
                  ),
              mainPanel(
-                 plotOutput("county_plot")
+                 plotOutput("county_plot"),
+                 br(), br(),
+                 plotOutput("county_regression")
              )
              ),
     
@@ -200,10 +202,7 @@ ui <- fluidPage(
              a community's racial inequality. From the data from the National 
              Center for Education Statistics (NCES), I retrieved the 
              adjusted cohort graduation rate (ACGR) based on race, which 
-             measures a school's racial inequality. Finally, from the Status 
-             of Women in the States, I obtained data on the gender earnings 
-             ratio among the states, which measures a community's gender 
-             inequality."),
+             measures a school's racial inequality."),
              h3("About Me"),
              p("My name is Katherine, and I plan to concentrate in social studies
              with a secondary in economics.
@@ -215,8 +214,8 @@ server <- function(input, output, session) {
     output$combinedrace1 <- renderImage({
         list(src = "combined_race.gif",
              alt = "combined_race.gif",
-             width = 700,
-             height = 700)}, 
+             width = 650,
+             height = 600)}, 
             deleteFile = FALSE)
     
     output$combinedsex1 <- renderImage({
@@ -227,139 +226,45 @@ server <- function(input, output, session) {
         deleteFile = FALSE)
     
     output$regressionplot <- renderPlot({
-        pov_status_race <- pov_status %>% 
-            mutate(white = (se_a13001a_002/se_a13001a_001) * 100) %>% 
-            mutate(black = (se_a13001b_002/se_a13001b_001) * 100) %>% 
-            mutate(asian = (se_a13001d_002/se_a13001d_001) * 100) %>% 
-            mutate(hispanic = (se_a13001h_002/se_a13001h_001) * 100)
+        combined_unemp_race <- combined_unemp_race
+        combined_unemp_race_reduced <- unique( combined_unemp_race[ , 1:3 ] )
+        combined_final1 <- combined_final1 %>% 
+            select(geo_name, drop_rate, race)
+        combined_final1_reduced <- unique( combined_final1[ , 1:3 ] )
+        combined_new <- left_join(combined_unemp_race_reduced, combined_final1_reduced, 
+                                  by = c("geo_name","race"))
         
-        combined_final1 <- combined_final %>% 
-            mutate(geo_name = region) %>% 
-            mutate(drop_rate = 100 - pct)
-        
-        pov_status_joined <- left_join(pov_status_race, combined_final1, by = "geo_name") %>% 
-            select(geo_name, white, black, asian, hispanic, drop_rate, race)
-        
-        statenames <- unique(pov_status_joined$geo_name)
-        
-        pov_status_final <- vector()
-        for(i in 1:length(statenames)){
-            sub <- unique(pov_status_joined[pov_status_joined$geo_name == statenames[i], ])
-            addition <- c(snames[i], unlist(sub[1, 2:5]), sub$drop_rate[c(1, 2, 4, 3)])
-            pov_status_final <- rbind(pov_status_final, addition)
-        }
-        pov_status_final <- as.data.frame(pov_status_final)
-        colnames(pov_status_final) <- c('state', 'whitepov', 'blackpov', 'asianpov', 'hisppov',
-                                        'whitedo', 'blackdo', 'asiando', 'hispdo')
-        pov_status_final[, -1] <- apply(pov_status_final[, -1], 2, as.numeric)
-        pov_status_final <- 
-            pov_status_final %>% na.omit() %>% 
-            mutate_if(is.numeric, ~round(., 1))
-        pov_status_final1 <- pov_status_final %>% 
-            mutate_if(is.numeric, ~round(., 1))
-        pov_status_final2 <- pov_status_final %>% 
-            mutate_if(is.numeric, ~round(., 1))
-        pov_status_final3 <- pov_status_final %>% 
-            mutate_if(is.numeric, ~round(., 1))
-        
-        ggplot() +
-            geom_point(data = pov_status_final, aes(x = whitepov, y = whitedo), col = "darkolivegreen", alpha = 0.8) +
-            geom_smooth(data = pov_status_final, aes(x = whitepov, y = whitedo), method = "lm", se = F, col = "darkolivegreen", alpha = 0.8) +
-            geom_point(data = pov_status_final1, aes(x = blackpov, y = blackdo), col = "deeppink2", alpha = 0.8) +
-            geom_smooth(data = pov_status_final1, aes(x = blackpov, y = blackdo), method = "lm", se = F, col = "deeppink2", alpha = 0.8) +
-            geom_point(data = pov_status_final2, aes(x = asianpov, y = asiando), col = "goldenrod2", alpha = 0.8) +
-            geom_smooth(data = pov_status_final2, aes(x = asianpov, y = asiando), method = "lm", se = F, col = "goldenrod2", alpha = 0.8) +
-            geom_point(data = pov_status_final3, aes(x = hisppov, y = hispdo), col = "midnightblue", alpha = 0.8) +
-            geom_smooth(data = pov_status_final3, aes(x = hisppov, y = hispdo), method = "lm", se = F, col = "midnightblue", alpha = 0.8) +
-            scale_x_continuous(breaks = seq(5, 45, 5), limits = c(5, 45)) +
-            scale_y_continuous(breaks = seq(0, 35, 5), limits = c(0, 35)) +
-            labs(title = "Relationship Between Poverty Status and School Dropout Rate \n Based on Race in 2017",
-                 x = "Percentage Whose Income is Below Poverty Level",
-                 y = "School Dropout Rate",
+        ggplot(combined_new, aes(x = unemp, y = drop_rate, color = race)) +
+            geom_point() +
+            geom_smooth(method = "lm", se = F) +
+            labs(title = "Relationship Between Unemployment Rate and School Dropout Rate \n Based on Race in 2017",
+                 color = "Race",
+                 x = "Unemployment Rate",
+                 y = "School Dropout Rate \n (For Population 16-19 Years)",
                  caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
-            theme(legend.position = "right") +
-            annotate("text", x = 40, y = 15, label = "Race", color = "black", size = 5) +
-            annotate("text", x = 41, y = 12, label = "White", color = "black", size = 4) +
-            annotate("text", x = 41, y = 10, label = "Black", color = "black", size = 4) +
-            annotate("text", x = 41, y = 8, label = "Asian", color = "black", size = 4) +
-            annotate("text", x = 41.3, y = 6, label = "Hispanic", color = "black", size = 4) +
-            geom_segment(aes(x = 37.5, y = 12, xend = 39, yend = 12), col = "darkolivegreen", data = pov_status_final) +
-            geom_segment(aes(x = 37.5, y = 10, xend = 39, yend = 10), col = "deeppink2", data = pov_status_final) +
-            geom_segment(aes(x = 37.5, y = 8, xend = 39, yend = 8), col = "goldenrod", data = pov_status_final) +
-            geom_segment(aes(x = 37.5, y = 6, xend = 39, yend = 6), col = "midnightblue", data = pov_status_final) +
+            scale_x_continuous(breaks = c(5, 10, 15), labels = c("5%", "10%", "15%")) +
+            scale_y_continuous(breaks = c(10, 20, 30), labels = c("10%", "20%", "30%")) +
+            scale_color_manual(values = c("goldenrod2", "darkolivegreen", "deeppink2", "midnightblue"), 
+                               labels = c("Asian", "Black", "Hispanic", "White")) +
             theme_classic()
     })
     
     output$regressionplot1 <- renderPlot({
-        # starts the pov status regression part
-        pov_status_sex <- pov_status %>% 
-            mutate(male = (se_a13005_003/se_a13005_001) * 100) %>% 
-            mutate(female = (se_a13005_004/se_a13005_001) * 100)
+        both <- both %>% select(region, drop_rate, type)
+        joined_sex <- both1 %>% left_join(both, by = c("region", "type"))
         
-        male <- acs %>% 
-            select(geo_name, 
-                   se_a12003a_001, 
-                   se_a12003a_002) %>% 
-            mutate(grad_rate = 100 - (se_a12003a_002/se_a12003a_001)*100) %>% 
-            mutate(type = "male") %>% 
-            mutate(total = se_a12003a_001, drop = se_a12003a_002) %>% 
-            mutate(region = geo_name)
-        
-        # I then turned all the states in the geo_name column into lowercase letters so
-        # that it would facilitate the left_join function that I would later use.
-        
-        male$region <- tolower(male$geo_name)
-        
-        # for females
-        female <- acs %>% 
-            select(geo_name, 
-                   se_a12003b_001, 
-                   se_a12003b_002) %>% 
-            mutate(grad_rate = 100 - (se_a12003b_002/se_a12003b_001)*100) %>% 
-            mutate(type = "female") %>% 
-            mutate(total = se_a12003b_001, drop = se_a12003b_002) %>% 
-            mutate(region = geo_name)
-        
-        # I then turned all the states in the geo_name column into lowercase letters so
-        # that it would facilitate the left_join function that I would later use.
-        
-        female$region <- tolower(female$geo_name)
-        
-        female1 <- female
-        female1$geo_name = tolower(female1$geo_name)
-        
-        pov_status_female <- left_join(pov_status_sex, female1, by = "geo_name") %>% 
-            mutate(drop_rate = (se_a12003b_002/se_a12003b_001)*100) %>% 
-            select(geo_name, female, drop_rate) %>% 
-            mutate_if(is.numeric, ~round(., 1))
-        
-        male1 <- male
-        male1$geo_name = tolower(male1$geo_name)
-        
-        pov_status_male <- left_join(pov_status_sex, male1, by = "geo_name") %>% 
-            mutate(drop_rate = (se_a12003a_002/se_a12003a_001)*100) %>% 
-            select(geo_name, male, drop_rate) %>% 
-            mutate_if(is.numeric, ~round(., 1))
-        
-        # excluded two outliers because they unduly influenced the regression line
-        pov_status_male <- pov_status_male[pov_status_male$male < max(pov_status_male$male),]
-        pov_status_female <- pov_status_female[pov_status_female$female < max(pov_status_female$female),]
-        
-        ggplot() +
-            geom_point(data = pov_status_male, aes(x = male, y = drop_rate), col = "blue", alpha = 0.8) +
-            geom_smooth(data = pov_status_male, aes(x = male, y = drop_rate), method = "lm", se = F, col = "blue", alpha = 0.8) +
-            geom_point(data = pov_status_female, aes(x = female, y = drop_rate), col = "deeppink2", alpha = 0.8) +
-            geom_smooth(data = pov_status_female, aes(x = female, y = drop_rate), method = "lm", se = F, col = "deeppink2", alpha = 0.8) +
-            scale_x_continuous(breaks = seq(3, 13, 1), limits = c(3, 13)) +
-            labs(title = "Relationship Between Poverty Status and School Dropout Rate \n Based on Sex in 2017",
-                 x = "Percentage Whose Income is Below Poverty Level",
-                 y = "School Dropout Rate",
+        ggplot(joined_sex, aes(x = unemp, y = drop_rate, color = type)) +
+            geom_point() +
+            geom_smooth(method = "lm", se = F) +
+            labs(title = "Relationship Between Unemployment Rate and School Dropout Rate \n Based on Sex in 2017",
+                 color = "Sex",
+                 x = "Unemployment Rate",
+                 y = "School Dropout Rate \n (For Population 16-19 Years)",
                  caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
-            annotate("text", x = 12.1, y = 3.5, label = "Sex", color = "black", size = 5) +
-            annotate("text", x = 12.4, y = 3.1, label = "Male", color = "black", size = 4) +
-            annotate("text", x = 12.5, y = 2.7, label = "Female", color = "black", size = 4) +
-            geom_segment(aes(x = 11.7, y = 3.1, xend = 12, yend = 3.1), col = "blue", data = pov_status_male) +
-            geom_segment(aes(x = 11.7, y = 2.7, xend = 12, yend = 2.7), col = "deeppink2", data = pov_status_female) +
+            scale_x_continuous(breaks = c(5, 10, 15), labels = c("5%", "10%", "15%")) +
+            scale_y_continuous(breaks = c(2, 3, 4, 5, 6, 7), labels = c("2%", "3%", "4%", "5%", "6%", "7%")) +
+            scale_color_manual(values = c("deeppink", "deepskyblue"), 
+                               labels = c("Female", "Male")) +
             theme_classic()
     })
     
@@ -429,6 +334,50 @@ server <- function(input, output, session) {
                   legend.spacing.x = unit(1, 'cm')) +
             theme_void()
         })
+    
+    output$county_regression <- renderPlot({
+        
+        if(input$state == "") {
+            return(NULL)
+        }
+        
+        dataset1 <- county_all_final %>% 
+            filter(region == input$state) %>% 
+            filter(datatype == "Dropout Rate") %>% 
+            mutate(dropout1 = data) %>% 
+            select(region, subregion, dropout1, type)
+        
+        dataset1_reduced <- unique( dataset1[ , 1:4 ] )
+        
+        dataset2 <- county_all_final %>% 
+            filter(region == input$state) %>% 
+            filter(datatype == "Unemployment Rate") %>% 
+            mutate(unemp1 = data) %>% 
+            select(region, subregion, unemp1, type)
+        
+        dataset2_reduced <- unique( dataset2[ , 1:4 ] )
+        
+        county_reg_joined <- dataset1_reduced %>% 
+            left_join(dataset2_reduced, by = c("region", "subregion", "type"))
+        
+        county_reg_joined %>% 
+            ggplot(aes(x = unemp1, y = dropout1, color = type)) +
+            geom_point() +
+            geom_smooth(method = "lm", se = F) +
+            labs(title = paste(input$state, 
+                               "| Relationship between School Dropout Rate and Unemployment Rate by Sex in 2017"),
+                 subtitle = paste("County Level Data"),
+                 caption = "Source: American Community Survey 2017",
+                 color = "Sex",
+                 x = "Unemployment Rate",
+                 y = "School Dropout Rate \n (For Population 16-19 Years)") +
+            scale_x_continuous(breaks = c(2.5, 5.0, 7.5, 10.0, 12.5), 
+                               labels = c("2.5%", "5.0%", "7.5%", "10.0%", "12.5%")) +
+            scale_y_continuous(breaks = c(0, 10, 20, 30), 
+                               labels = c("0%", "10%", "20%", "30%")) +
+            scale_color_manual(values = c("deeppink", "deepskyblue")) +
+            theme_classic()
+    })
 }
 
 # Run the application 

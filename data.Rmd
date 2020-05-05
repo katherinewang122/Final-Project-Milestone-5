@@ -143,7 +143,7 @@ dropout_county %>% filter(region == input$state) %>%
 ```
 
 
-```{r ny_unemp_sex}
+```{r unemp_sex}
 #combine all
  dropout_county_male <- county_data %>% 
             select(region, subregion, se_a12003a_001, se_a12003a_002) %>% 
@@ -332,7 +332,9 @@ ggplot(combo_sex, aes(x = long, y = lat, group = group, fill = count, frame = da
                                             draw.ulim = FALSE,
                                             title.position = "top",
                                             title.hjust = 0.5,
-                                            label.hjust = 0.5)) +
+                                            label.hjust = 0.5),
+                     breaks = c(2, 4, 6, 8),
+                     labels = c("2%", "4%", "6%", "8%")) +
   facet_wrap(~ type) +
   theme_void() +
   theme(legend.position = "bottom",
@@ -464,19 +466,21 @@ combined_race$race <- capFirst(combined_race$race)
 ggplot(combined_race, aes(x = long, y = lat, group = group, fill = count, frame = datatype)) +
   geom_polygon(color = "white") +
   coord_fixed(1.3) +
-  labs(title = "A Comparison of the School Graduation Rate and the Unemployment Rate \n By Race in 2017",
+  labs(title = "A Comparison of the School Dropout Rate and the Unemployment Rate \n By Race in 2017",
        subtitle = "{current_frame}",
        caption = "Source: American Community Survey 2017",
        fill = "{current_frame}") +
   scale_fill_viridis(option = "viridis", 
-                     direction = -1, 
+                     direction = -1,
                      guide = guide_colorbar(direction = "horizontal",
                                             barheight = unit(2, units = "mm"),
                                             barwidth = unit(35, units = "mm"),
                                             draw.ulim = FALSE,
                                             title.position = "top",
                                             title.hjust = 0.5,
-                                            label.hjust = 0.5)) +
+                                            label.hjust = 0.5),
+                     breaks = c(10, 20, 30),
+                     labels = c("10%", "20%", "30%")) +
   facet_wrap(~ race) +
   theme_void() +
   theme(legend.position = "bottom", 
@@ -489,6 +493,25 @@ anim_save("combined_race.gif", animation = last_animation(), path = "final_proje
 
 
 ```{r poverty_status_sex}
+# new code
+both <- both %>% select(region, drop_rate, type)
+joined_sex <- both1 %>% left_join(both, by = c("region", "type"))
+
+ggplot(joined_sex, aes(x = unemp, y = drop_rate, color = type)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Relationship Between Unemployment Rate and School Dropout Rate \n Based on Sex in 2017",
+       color = "Sex",
+       x = "Unemployment Rate",
+       y = "School Dropout Rate \n (For Population 16-19 Years)",
+       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
+  scale_x_continuous(breaks = c(5, 10, 15), labels = c("5%", "10%", "15%")) +
+  scale_y_continuous(breaks = c(2, 3, 4, 5, 6, 7), labels = c("2%", "3%", "4%", "5%", "6%", "7%")) +
+  scale_color_manual(values = c("deeppink", "deepskyblue"), 
+                     labels = c("Female", "Male")) +
+  theme_classic()
+
+# old code
 pov_status_sex <- pov_status %>% 
   mutate(male = (se_a13005_003/se_a13005_001) * 100) %>% 
   mutate(female = (se_a13005_004/se_a13005_001) * 100)
@@ -517,7 +540,7 @@ pov_status_sex_plot <- ggplot() +
   geom_smooth(data = pov_status_female, aes(x = female, y = drop_rate), method = "lm", se = F, col = "deeppink2", alpha = 0.8) +
   scale_x_continuous(breaks = seq(3, 13, 1), limits = c(3, 13)) +
   labs(title = "Relationship Between Poverty Status and School Dropout Rate \n Based on Sex in 2017",
-       x = "Percentage Whose Income is Below Poverty Level",
+       x = "Unemployment Rate",
        y = "School Dropout Rate",
        caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
   annotate("text", x = 12.1, y = 3.5, label = "Sex", color = "black", size = 5) +
@@ -530,6 +553,30 @@ pov_status_sex_plot <- ggplot() +
 
 
 ```{r poverty_status_race}
+# new code
+combined_unemp_race <- combined_unemp_race
+combined_unemp_race_reduced <- unique( combined_unemp_race[ , 1:3 ] )
+combined_final1 <- combined_final1 %>% 
+  select(geo_name, drop_rate, race)
+combined_final1_reduced <- unique( combined_final1[ , 1:3 ] )
+combined_new <- left_join(combined_unemp_race_reduced, combined_final1_reduced, 
+                          by = c("geo_name","race"))
+
+ggplot(combined_new, aes(x = unemp, y = drop_rate, color = race)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Relationship Between Unemployment Rate and School Dropout Rate \n Based on Race in 2017",
+       color = "Race",
+       x = "Unemployment Rate",
+       y = "School Dropout Rate \n (For Population 16-19 Years)",
+       caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
+  scale_x_continuous(breaks = c(5, 10, 15), labels = c("5%", "10%", "15%")) +
+  scale_y_continuous(breaks = c(10, 20, 30), labels = c("10%", "20%", "30%")) +
+  scale_color_manual(values = c("goldenrod2", "darkolivegreen", "deeppink2", "midnightblue"), 
+                     labels = c("Asian", "Black", "Hispanic", "White")) +
+  theme_classic()
+
+# old code
 pov_status_race <- pov_status %>% 
   mutate(white = (se_a13001a_002/se_a13001a_001) * 100) %>% 
   mutate(black = (se_a13001b_002/se_a13001b_001) * 100) %>% 
@@ -586,5 +633,102 @@ pov_plot <- ggplot() +
   geom_segment(aes(x = 37.5, y = 8, xend = 39, yend = 8), col = "goldenrod", data = pov_status_final) +
   geom_segment(aes(x = 37.5, y = 6, xend = 39, yend = 6), col = "midnightblue", data = pov_status_final) +
   theme_classic()
+```
+
+
+```{r}
+ dropout_county_male <- county_data %>% 
+            select(region, subregion, se_a12003a_001, se_a12003a_002) %>% 
+            mutate(data = (se_a12003a_002/se_a12003a_001)*100) %>% 
+            mutate(type = "male") %>% 
+            mutate(datatype = "Dropout Rate") %>% 
+            select(region, subregion, data, type, datatype)
+        
+        dropout_county_female <- county_data %>% 
+            select(region, subregion, se_a12003b_001, se_a12003b_002) %>% 
+            mutate(data = (se_a12003b_002/se_a12003b_001)*100) %>% 
+            mutate(type = "female") %>% 
+            mutate(datatype = "Dropout Rate") %>% 
+            select(region, subregion, data, type, datatype)
+        
+        dropout_county_both <- rbind(dropout_county_male, dropout_county_female)
+        
+        unemp_county_male <- county_data %>% 
+            select(region, subregion, se_a17005a_001, se_a17005a_003) %>% 
+            mutate(data = (se_a17005a_003/se_a17005a_001)*100) %>% 
+            mutate(type = "male") %>% 
+            mutate(datatype = "Unemployment Rate") %>% 
+            select(region, subregion, data, type, datatype)
+        
+        unemp_county_female <- county_data %>% 
+            select(region, subregion, se_a17005b_001, se_a17005b_003) %>% 
+            mutate(data = (se_a17005b_003/se_a17005b_001)*100) %>% 
+            mutate(type = "female") %>% 
+            mutate(datatype = "Unemployment Rate") %>% 
+            select(region, subregion, data, type, datatype)
+        
+        unemp_county_both <- rbind(unemp_county_male, unemp_county_female)
+        county_all <- rbind(unemp_county_both, dropout_county_both)
+        county_all_final <- left_join(county, county_all, by = c("region", "subregion"))
+        
+        county_all_final$type <- toupper(county_all_final$type)
+        county_all_final$region <- toupper(county_all_final$region)
+        
+        county_all_final %>% 
+            filter(region == "NEW YORK") %>%
+            filter(datatype == "Dropout Rate") %>% 
+            ggplot(aes(x = long, y = lat, group = group, fill = data)) +
+            geom_polygon(color = "white") +
+          facet_wrap(~ type) +
+            labs(title = paste("| Map of by Sex in 2017"),
+                 subtitle = paste("County Level Data"),
+                 caption = "Source: American Community Survey 2017") +
+            scale_fill_viridis(option = "magma", 
+                               direction = -1,
+                               guide = guide_colorbar(direction = "horizontal",
+                                                      barheight = unit(2, units = "mm"),
+                                                      barwidth = unit(35, units = "mm"),
+                                                      draw.ulim = FALSE,
+                                                      title.position = "top",
+                                                      title.hjust = 0.5,
+                                                      label.hjust = 0.5)) +
+            theme(legend.position = "bottom",
+                  legend.spacing.x = unit(1, 'cm')) +
+            theme_void()
+        
+        dataset1 <- county_all_final %>% 
+            filter(region == "NEW YORK") %>% 
+            filter(datatype == "Dropout Rate") %>% 
+            mutate(dropout1 = data) %>% 
+          select(region, subregion, dropout1, type)
+        
+        dataset1_reduced <- unique( dataset1[ , 1:4 ] )
+        
+        dataset2 <- county_all_final %>% 
+            filter(region == "NEW YORK") %>% 
+            filter(datatype == "Unemployment Rate") %>% 
+            mutate(unemp1 = data) %>% 
+          select(region, subregion, unemp1, type)
+        
+        dataset2_reduced <- unique( dataset2[ , 1:4 ] )
+        county_reg_joined <- dataset1_reduced %>% 
+            left_join(dataset2_reduced, by = c("region", "subregion", "type"))
+        
+        county_reg_joined %>% 
+            ggplot(aes(x = unemp1, y = dropout1, color = type)) +
+            geom_point() +
+            geom_smooth(method = "lm", se = F) +
+            labs(title = paste("| Relationship between School Dropout Rate and Unemployment Rate by Sex in 2017"),
+                 subtitle = paste("County Level Data"),
+                 caption = "Source: American Community Survey 2017",
+                 color = "Sex",
+                 x = "Unemployment Rate",
+                 y = "School Dropout Rate \n (For Population 16-19 Years)") +
+          scale_x_continuous(breaks = c(2.5, 5.0, 7.5, 10.0, 12.5), 
+                           labels = c("2.5%", "5.0%", "7.5%", "10.0%", "12.5%")) +
+          scale_y_continuous(breaks = c(0, 10, 20, 30), 
+                           labels = c("0%", "10%", "20%", "30%")) +
+          scale_color_manual(values = c("deeppink", "deepskyblue")) +
+          theme_classic()
 ```
 
