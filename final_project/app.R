@@ -123,23 +123,101 @@ ui <- fluidPage(
     theme = shinytheme("cosmo"),
     navbarPage(tags$b("Schools as Social Mirrors"),
     
-    tabPanel("Findings",
-             titlePanel("Findings"),
-             mainPanel(
-                 imageOutput("combinedrace1"),
-                 br(), br(), br(), br(), br(), br(), br(),
-                 imageOutput("combinedsex1"),
-                 br(), br(), br(), br(), br(), br(), br(),
-                 br(), br(), br(), br(), br(), br(), br(),
-                 plotOutput("regressionplot"),
-                 br(), br(), br(), br(),
-                 plotOutput("regressionplot1")
-             )
+    tabPanel("Featured Findings",
+             h1(tags$b("Schools as Social Mirrors"), 
+                align = "center"),
+             p(tags$em("An Analysis of School and Societal Inequality"), 
+               align = "center"),
+             fluidRow(column(2), column(8,
+             p("Do schools act as springboards of social progress, or do they 
+               merely reinforce existing inequalities? My project attempts to 
+               nswer this question by analyzing the separate effects of two 
+               types of inequality, race and gender, on schools and communities."),
+             p("Hunting for the right variables to analyze was one of my largest 
+               concerns throughout this project. Any attempt to quantify inequality 
+               risks oversimplification. Thus, the data provided in this project merely 
+               outlines certain forms of inequality, and does not account for the 
+               lived experiences of those who have been disproportionately impacted by it."),
+             p("Finding data for inequality at the school level also proved 
+               particularly challenging, as most attempts to measure inequality 
+               have been conducted at the national or state level. In the end, I 
+               settled on using school dropout rates as an indicator of school 
+               inequality because students who drop out typically do so in order 
+               to support their family (economic necessity) or because they did not 
+               feel a sense of belonging or safety (discrimination) -- both of 
+               which are signs of inequality. For measuring societal inequality, 
+               which I conducted at both the state and county levels, I analyzed 
+               the unemployment rate and poverty status, both of which indicate 
+               socioeconomic inequality."),
+             p("So does a school’s inequality reflect that of its community’s? 
+               The four small maps below (one map for each race) provide an 
+               overview of the comparison of the school dropout rate and the 
+               unemployment rate. From the maps, we see that Asians and Whites 
+               experience similar low levels of school dropout and unemployment rates, 
+               whereas Blacks experience the highest levels of both rates. The 
+               correlation between the school dropout rate and the unemployment rate 
+               seems ambiguous: although some states that have higher unemployment 
+               rates also have higher school dropout rates, such as New Mexico and 
+               Nevada, other states that have lower unemployment rates have high 
+               school dropout rates, such as North Dakota."))),
+             fluidRow(column(2), column(8, align = "center",
+             imageOutput("combinedrace1", width = "100%", height = "100%"))),
+             fluidRow(column(2), column(8,
+             p("In order to get a clearer sense of the correlation between the 
+               unemployment rate and the school dropout rate, I created a linear 
+               regression between the two variables for the different races. The 
+               regression shows that there is a positive correlation between the 
+               unemployment rate and the school dropout rate for Blacks, Hispanics, 
+               and Whites, but a strong negative correlation for Asians. This means 
+               that for Blacks, Hispanics, and Whites, a higher unemployment rate 
+               is associated with a higher school dropout rate; on the other hand, 
+               for Asians, a higher unemployment rate is associated with a lower 
+               school dropout rate. However, the regression plots for Asians and 
+               Whites might not be that accurate because the data points are more 
+               clustered together, so outliers might unduly influence the slope 
+               of the regression."),
+             p("In addition, the fact that the Hispanic and Black regression plots 
+               experience a greater outward shift signify that those two races 
+               generally have higher rates for both unemployment and school dropout 
+               than the rates for Asians and Whites. This supports what we have 
+               observed previously in the four maps."),
+             plotOutput("regressionplot1"), br(),
+             p("Now that we have analyzed the effects of unemployment on school 
+               dropout rates for different races, what about the effects on sex? 
+               Overall, male students experience a higher dropout rate than their 
+               female counterparts. In some states, we see a correlation between 
+               the unemployment rate and the school dropout rate: for instance, 
+               Louisiana and New Mexico have both high unemployment and school 
+               dropout rates, and Nebraska and Virginia. However, other states 
+               like California seem to display contrasting results, as it has a 
+               low school dropout rate but a high unemployment rate."))),
+             fluidRow(column(2), column(8, align = "center",
+             imageOutput("combinedsex1", width = "100%", height = "100%"))),
+             fluidRow(column(2), column(8,
+             p("Like before, I used a regression to analyze the correlation between 
+               the unemployment rate and the school dropout rate based on sex. I 
+               removed two outliers that disproportionately influenced the slope 
+               of the regressions. From the graph, we notice that there is a 
+               positive correlation between the unemployment rate and the school 
+               dropout rate for both males and females, but the correlation is 
+               stronger for males. This signifies that a higher unemployment rate 
+               for males is associated with a higher school dropout rate for male 
+               students, and the same goes for females."),
+             plotOutput("regressionplot"), br(),
+             p("These data points are by state; in order to weed out more confounding 
+               variables, I examined the relationship between these two variables 
+               on a county level next. These findings are in the next tab.")
+             ))
              ),
     
     tabPanel("In-Depth Analysis of Gender Inequality",
              titlePanel("In-Depth Analysis of Gender Inequality"),
              sidebarPanel(
+                 p(tags$em("What is the relationship between the unemployment rate and the school
+                           dropout rate by sex on a county level? Select a state and one of the 
+                           two variables to view the differences in that variable across that 
+                           state's counties. The regression plot below also graphs the relationship
+                           between the two variables for each state, using county-level data.")),
                  selectInput("state", "State: ",
                              c("Alabama" = "ALABAMA", # no alaska
                                "Arizona" = "ALABAMA", 
@@ -179,9 +257,10 @@ ui <- fluidPage(
              )
              ),
     
-    tabPanel("About", 
-             titlePanel("About"),
-             h3("Project Background and Motivations"),
+    tabPanel("About this Project", 
+             br(), br(), br(), br(),
+             fluidRow(column(3), column(6, 
+                h3("About this Project", align = "center"),
              p("The goal of this project is to discover the extent to which a 
              school’s inequality mirrors that of its community’s. Although some 
              believe that schools act as the springboard of social equality and 
@@ -191,38 +270,39 @@ ui <- fluidPage(
              forms of inequality, race and gender, in two separate spheres -- 
              the school and the community. Ultimately, I hope to discover 
              whether a correlative relationship exists between inequality in a 
-             community and inequality in schools."),
+             community and inequality in schools.", align = "center"),
              p("I gathered my data from three sources: the American Community 
-             Surveys (ACS) from the US Census Bureau, the National Center 
-             for Education Statistics (NCES), and the Status of Women in the 
-             States. From ACS’ data, I extracted information about each 
+             Surveys (ACS) from the US Census Bureau and the National Center 
+             for Education Statistics (NCES). From ACS’ data, I extracted information about each 
              state's school dropout rates by gender and  average household 
              income by race. The dropout rates correspond to a school's 
              gender inequality, whereas the household income by race measures 
              a community's racial inequality. From the data from the National 
              Center for Education Statistics (NCES), I retrieved the 
              adjusted cohort graduation rate (ACGR) based on race, which 
-             measures a school's racial inequality."),
-             h3("About Me"),
-             p("My name is Katherine, and I plan to concentrate in social studies
-             with a secondary in economics.
-             You can reach me at katherinewang1@college.harvard.edu.")))
+             measures a school's racial inequality.", align = "center"),
+             column(3))),
+             fluidRow(column(3), column(6,    
+                h3("About Me", align = "center"),
+                p("My name is Katherine, and I plan to concentrate in social studies
+                with a secondary in economics.", align = "center"),
+                p("Email: katherinewang1@college.harvard.edu", align = "center"),
+                p(tags$a(href = "https://github.com/katherinewang122", "GitHub: katherinewang122"), 
+                  align = "center"), column(3)))
+             )
     )
+)
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
     output$combinedrace1 <- renderImage({
         list(src = "combined_race.gif",
-             alt = "combined_race.gif",
-             width = 650,
-             height = 600)}, 
+             alt = "combined_race.gif")}, 
             deleteFile = FALSE)
     
     output$combinedsex1 <- renderImage({
         list(src = "combined_sex.gif",
-             alt = "combined_sex.gif",
-             width = 700,
-             height = 700)}, 
+             alt = "combined_sex.gif")}, 
         deleteFile = FALSE)
     
     output$regressionplot <- renderPlot({
@@ -261,7 +341,8 @@ server <- function(input, output, session) {
                  x = "Unemployment Rate",
                  y = "School Dropout Rate \n (For Population 16-19 Years)",
                  caption = "Source: American Community Survey 2017 and National Center for Education Statistics 2017") +
-            scale_x_continuous(breaks = c(5, 10, 15), labels = c("5%", "10%", "15%")) +
+            scale_x_continuous(breaks = seq(2, 10, 1), limits = c(2, 10), 
+                               labels = c("2%", "3%", "4%", "5%", "6%", "7%", "8%", "9%", "10%")) +
             scale_y_continuous(breaks = c(2, 3, 4, 5, 6, 7), labels = c("2%", "3%", "4%", "5%", "6%", "7%")) +
             scale_color_manual(values = c("deeppink", "deepskyblue"), 
                                labels = c("Female", "Male")) +
