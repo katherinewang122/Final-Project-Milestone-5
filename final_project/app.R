@@ -258,7 +258,6 @@ ui <- fluidPage(
              ),
     
     tabPanel("About this Project", 
-             br(), br(), br(), br(),
              fluidRow(column(3), column(6, 
                 h3("About this Project", align = "center"),
              p("The goal of this project is to discover the extent to which a 
